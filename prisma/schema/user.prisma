@@ -1,0 +1,16 @@
+model User {
+  id            String    @id @default(uuid())
+    name          String
+    email         String    @unique
+    passwordHash  String
+    baseCurrency  String    @default("INR")
+    monthlySalary Decimal?  @db.Decimal(12, 2)
+    payday        Int?      // 1-28
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+    
+    // Relations
+    accounts      Account[]
+    transactions  Transaction[]
+
+}
