@@ -4,6 +4,8 @@ node_modules/
 .DS_Store
 *.log
 
+/prisma/migrations
+
 /src/generated/prisma
 
 /src/generated/prisma

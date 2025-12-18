@@ -1,10 +1,12 @@
 const prisma = require('../prismaClient');
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 exports.getUsers = async (req, res) => {
   try {
     console.log("Fetching all users");
     // console.log(prisma.user);
-    const users = await prisma.User.findMany({});
+    const users = await prisma.user.findMany({});
     res.json(users);
   } catch (err) {
     console.error(err);
@@ -16,7 +18,7 @@ exports.getUserById = async (req, res) => {
   const id = req.params.id;
   // if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid id' });
   try {
-    const user = await prisma.user.findUnique({ where: { 'id' : id }});
+    const user = await prisma.user.findUnique({ where: { 'id': id } });
     if (!user) return res.status(404).json({ error: 'Not found' });
     res.json(user);
   } catch (err) {
@@ -26,22 +28,16 @@ exports.getUserById = async (req, res) => {
 };
 
 exports.createUser = async (req, res) => {
-  const { email, name, passwordHash } = req.body;
-  if (!email || !passwordHash) return res.status(400).json({ error: 'email and password required' });
-
-  // if (profile && profile.phoneNo != null) {
-  //   const phone = String(profile.phoneNo);
-  //   if (!/^\d{1,10}$/.test(phone)) {
-  //     return res.status(400).json({ error: 'phoneNo must be up to 10 digits (numbers only)' });
-  //   }
-  // }
-
   try {
+    const { email, name, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'email and password required' });
+
+    const passwordHash = await bcrypt.hash(password, saltRounds);
     const created = await prisma.user.create({
       data: {
         email,
         name,
-        passwordHash
+        password: passwordHash
       }
     });
     res.status(201).json(created);
