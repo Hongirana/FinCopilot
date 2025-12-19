@@ -1,7 +1,9 @@
 require('dotenv').config();
-const jwt = require('jsonwebtoken'); 
+const jwt = require('jsonwebtoken');
+const { user } = require('../prismaClient');
+const authUtils = require('../utils/authUtils');
 
-function authenticateMiddleware(req, res, next) {
+async function authenticateMiddleware(req, res, next) {
   const authorizationHeader = req.headers.authorization;
 
   if (!authorizationHeader) {
@@ -15,13 +17,18 @@ function authenticateMiddleware(req, res, next) {
   }
 
   try {
-    const user = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    req.user = user;
-    console.log("Authenticated User:", user);
-    next();
+   const decoded = await authUtils.verifyToken(token);
+      if (!decoded) {
+        return res.status(401).json({ error: 'Invalid Token or missing' });
+      }
+      req.user = {id : decoded.id, email: decoded.email};
+      console.log('Authenticated User:', decoded);
+      next();
+
   } catch (error) {
+    console.error('JWT Verification Error:', error);
     return res.status(403).json({ error: 'Forbidden' });
   }
 }
 
-  module.exports = authenticateMiddleware;
+module.exports = authenticateMiddleware;

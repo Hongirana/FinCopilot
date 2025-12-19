@@ -6,25 +6,31 @@ const port = process.env.PORT || 3000;
 //Importing Routes
 const userRoutes = require('./src/routes/userRoutes');
 const transactionRoutes = require('./src/routes/transactionRoutes');
-const signUpRoutes = require('./src/routes/signUpRoutes');
-const loginRoutes = require('./src/routes/loginRoutes');
+const authRoutes = require('./src/routes/authRoutes');
+;
 
-
+//Importing Middleware
+const errorHandlerMiddleware = require('./src/middleware/errorHandlingMiddleware');
 
 app.use(express.json());
 console.log("FinCopilot Project Initialized Version 1.0.0");
 
 // API routes for Authentication
-app.use('/api/signUp', signUpRoutes);
-app.use('/api/logIn', loginRoutes);
+app.use('/api/auth', authRoutes);
 
 // API routes for Table 
 app.use('/api/users', userRoutes);
 app.use('/api/transactions', transactionRoutes);
 
+
+//Api routes for Middleware testing
+app.use(errorHandlerMiddleware);
+
+
+// Sample route to test the server
 app.get('/', (req, res) => {
   res.send('Welcome to the FinCopilot Project!');
-}); 
+});
 
 app.post('/update', (req, res) => {
   // Placeholder for financial data analysis logic
@@ -34,7 +40,7 @@ app.post('/update', (req, res) => {
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send('Something broke!');
-});  
+});
 
 app.listen(port, () => {
   console.log(`FinCopilot Project is running at http://localhost:${port}`);

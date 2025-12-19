@@ -37,7 +37,7 @@ exports.createTransaction = async (req, res) => {
         accountId
       }
     });
-    res.status(201).json(created);
+    res.status(201).json({success: true, message: 'Transaction created successfully', data: created});
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

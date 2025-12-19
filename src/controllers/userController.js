@@ -40,7 +40,7 @@ exports.createUser = async (req, res) => {
         password: passwordHash
       }
     });
-    res.status(201).json(created);
+    res.status(201).json({success: true, message: 'User created successfully', data: created});
   } catch (err) {
     console.error(err);
     if (err.code === 'P2002') return res.status(409).json({ error: 'Email already exists' });
