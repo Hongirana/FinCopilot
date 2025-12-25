@@ -12,6 +12,7 @@ const accountRoutes = require('./src/routes/accountRoutes');
 
 //Importing Middleware
 const errorHandlerMiddleware = require('./src/middleware/errorHandlingMiddleware');
+const errorHandler = require('./middleware/errorHandler');
 
 app.use(express.json());
 console.log("FinCopilot Project Initialized Version 1.0.0");
@@ -26,6 +27,7 @@ app.use('/api/accounts', accountRoutes);
 
 //Api routes for Middleware testing
 app.use(errorHandlerMiddleware);
+app.use(errorHandler);
 
 
 // Sample route to test the server
