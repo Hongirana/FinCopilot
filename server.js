@@ -7,7 +7,8 @@ const port = process.env.PORT || 3000;
 const userRoutes = require('./src/routes/userRoutes');
 const transactionRoutes = require('./src/routes/transactionRoutes');
 const authRoutes = require('./src/routes/authRoutes');
-;
+const accountRoutes = require('./src/routes/accountRoutes');
+
 
 //Importing Middleware
 const errorHandlerMiddleware = require('./src/middleware/errorHandlingMiddleware');
@@ -21,7 +22,7 @@ app.use('/api/auth', authRoutes);
 // API routes for Table 
 app.use('/api/users', userRoutes);
 app.use('/api/transactions', transactionRoutes);
-
+app.use('/api/accounts', accountRoutes);
 
 //Api routes for Middleware testing
 app.use(errorHandlerMiddleware);
