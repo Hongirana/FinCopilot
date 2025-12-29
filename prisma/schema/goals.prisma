@@ -1,0 +1,25 @@
+model Goal {
+  id            String     @id @default(uuid())
+  title         String
+  description   String?
+  targetAmount  Decimal    @db.Decimal(15, 2)
+  currentAmount Decimal    @default(0) @db.Decimal(15, 2)
+  deadline      DateTime?
+  status        GoalStatus @default(ACTIVE)
+  userId        String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@map("goals")
+  @@index([userId])
+  @@index([status])
+  @@index([deadline])
+}
+
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}

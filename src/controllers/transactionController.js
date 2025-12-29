@@ -1,7 +1,7 @@
 const prisma = require('../prismaClient');
 const transtionModel = require('../models/transaction');
 const categorizeTransaction = require('../utils/categorizer');
-
+const { updateBudgetSpent } = require('../utils/budgetTracker');
 
 // exports.getTransactionData = async (req, res) => {
 //   try {
@@ -137,9 +137,21 @@ let createTransaction = async (req, res) => {
         merchant,
         description,
         date: date || new Date(),
-        accountId
+        accountId,
+        userId: req.user.id
       }
     });
+    
+     // ✅ ADD THIS: Update budget if expense transaction
+        if (created.type === 'debit' && created.category) {
+            try {
+                await updateBudgetSpent(req.user.id, created.category, created.date);
+            } catch (budgetError) {
+                // Log error but don't fail transaction creation
+                console.error('Failed to update budget:', budgetError);
+            }
+        }
+
     res.status(201).json({ success: true, message: 'Transaction created successfully', data: created });
   } catch (err) {
     console.error(err);
@@ -177,7 +189,7 @@ let updateTransaction = async (req, res) => {
     } = req.body;
 
     //Checking transaction exists or not
-    const transaction = await prisma.transaction.findUnique({ where: { id }, select: { userId: true, accountId: true } });
+    const transaction = await prisma.transaction.findUnique({ where: { id , userId: req.user.id }});
 
     if (!transaction) return res.status(404).json({ error: 'Transaction Not found' });
 
@@ -207,6 +219,26 @@ let updateTransaction = async (req, res) => {
 
     //Updating transaction
     const updatedTransaction = await prisma.transaction.update({ where: { id }, data: updateData });
+    
+         // ✅ ADD THIS: Update budget if expense transaction
+        if (transaction.type === 'debit' && transaction.category) {
+            try {
+                await updateBudgetSpent(req.user.id, transaction.category, transaction.date);
+            } catch (budgetError) {
+                // Log error but don't fail transaction creation
+                console.error('Failed to update budget:', budgetError);
+            }
+        }
+
+     if (updatedTransaction.type === 'debit' && updatedTransaction.category) {
+            try {
+                await updateBudgetSpent(req.user.id, updatedTransaction.category, updatedTransaction.date);
+            } catch (budgetError) {
+                console.error('Failed to update new budget:', budgetError);
+            }
+        }   
+    
+    
     res.status(200).json({ success: true, message: 'Transaction updated successfully', data: updateData });
 
   } catch (err) {
@@ -215,9 +247,50 @@ let updateTransaction = async (req, res) => {
   }
 }
 
+
+let deleteTransaction = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const userId = req.user.id;
+
+        // ✅ Get transaction details BEFORE deleting
+        const transaction = await prisma.transaction.findFirst({
+            where: { id, userId }
+        });
+
+        if (!transaction) {
+            return res.status(404).json({ error: 'Transaction not found' });
+        }
+
+        // Delete transaction
+        await prisma.transaction.delete({
+            where: { id }
+        });
+
+        // ✅ Update budget after deletion
+        if (transaction.type === 'debit' && transaction.category) {
+            try {
+                await updateBudgetSpent(userId, transaction.category, transaction.date);
+            } catch (budgetError) {
+                console.error('Failed to update budget after deletion:', budgetError);
+            }
+        }
+
+        res.status(200).json({ 
+            success: true, 
+            message: 'Transaction deleted successfully' 
+        });
+
+    } catch (err) {
+        console.error('Delete transaction error:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
 module.exports = {
   listTransactions,
   createTransaction,
   getTransactionById,
-  updateTransaction
+  updateTransaction,
+  deleteTransaction
 }

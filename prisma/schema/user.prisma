@@ -1,25 +1,25 @@
 model User {
-    id            String    @id @default(uuid())
-    name          String
-    email         String    @unique
-    password      String
-    baseCurrency  String    @default("INR")
-    monthlySalary Decimal?  @db.Decimal(12, 2)
-    phoneNo       String?
-    payday        Int?      // 1-28
-    role          Role      @default(user)
-    createdAt     DateTime  @default(now())
-    updatedAt     DateTime  @updatedAt
-    
-    // Relations
-    accounts      Account[]
-    transactions  Transaction[]
-  }
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  password      String
+  baseCurrency  String   @default("INR")
+  monthlySalary Decimal? @db.Decimal(12, 2)
+  phoneNo       String?
+  payday        Int? // 1-28
+  role          Role     @default(user)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  accounts     Account[]
+  transactions Transaction[]
+  budgets      Budget[]
+  goals        Goal[]
+}
 
 enum Role {
   user
   admin
   superadmin
 }
-  // budgets       Budget[]
-  //   goals         Goal[]

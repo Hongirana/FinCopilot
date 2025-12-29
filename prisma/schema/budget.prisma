@@ -1,0 +1,26 @@
+model Budget {
+  id        String   @id @default(uuid())
+  category  String
+  amount    Decimal  @db.Decimal(15, 2)
+  spent     Decimal  @default(0) @db.Decimal(15, 2)
+  period    Period   @default(MONTHLY)
+  startDate DateTime
+  endDate   DateTime
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("budgets")
+  @@index([userId])
+  @@index([category])
+  @@index([startDate, endDate])
+}
+
+
+enum Period {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
