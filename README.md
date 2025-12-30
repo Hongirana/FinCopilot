@@ -1172,4 +1172,48 @@ You've built a **production-ready Budget Management System** with automatic trac
 Let me know! 😊
 
 
+Week 2 
+
+### Goals
+Financial goals tracking with automatic progress calculation.
+
+#### Create Goal
+POST /api/goals
+Authorization: Bearer {token}
+{
+  "title": "Emergency Fund",
+  "description": "6 months expenses",
+  "targetAmount": 300000,
+  "deadline": "2026-12-31",
+  "category": "emergency-fund",
+  "priority": "high"
+}
+
+#### Get All Goals
+GET /api/goals
+GET /api/goals?status=ACTIVE
+GET /api/goals?category=savings
+
+#### Get Single Goal
+GET /api/goals/:id
+
+#### Add Money to Goal
+PATCH /api/goals/:id/progress
+{
+  "amount": 5000
+}
+
+#### Update Goal
+PUT /api/goals/:id
+{
+  "title": "Updated Goal",
+  "targetAmount": 400000
+}
+
+#### Delete Goal
+DELETE /api/goals/:id
+
+#### Get Goal Statistics
+GET /api/goals/stats
+
 

@@ -5,7 +5,7 @@
  * @param {string} message - Success message
  * @param {number} statusCode - HTTP status code (default 200)
  */
-exports.sendSuccessResponse = (res, data, message = 'Success', statusCode = 200) => {
+const successResponse = (res, statusCode, message = 'Success', data = null) => {
   res.status(statusCode).json({
     success: true,
     message,
@@ -20,7 +20,7 @@ exports.sendSuccessResponse = (res, data, message = 'Success', statusCode = 200)
  * @param {number} statusCode - HTTP status code (default 500)
  * @param {array} details - Additional error details (optional)
  */
-exports.errorResponse = (res, statusCode = 200, message = 'Success', details = null) => {
+const errorResponse = (res, statusCode, message = 'Success', details = null) => {
   const response = {
     success: false,
     error: {
@@ -35,3 +35,8 @@ exports.errorResponse = (res, statusCode = 200, message = 'Success', details = n
 
   res.status(statusCode).json(response);
 };
+
+module.exports = {
+  successResponse,
+  errorResponse
+}

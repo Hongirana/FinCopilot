@@ -9,11 +9,12 @@ const transactionRoutes = require('./src/routes/transactionRoutes');
 const authRoutes = require('./src/routes/authRoutes');
 const accountRoutes = require('./src/routes/accountRoutes');
 const budgetRoutes = require('./src/routes/budgetRoutes');
+const goalRoutes = require('./src/routes/goalsRoutes');
 
 
 //Importing Middleware
 const errorHandlerMiddleware = require('./src/middleware/errorHandlingMiddleware');
-const errorHandler = require('./middleware/errorHandler');
+
 
 app.use(express.json());
 console.log("FinCopilot Project Initialized Version 1.0.0");
@@ -26,10 +27,11 @@ app.use('/api/users', userRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/accounts', accountRoutes);
 app.use('/api/budgets', budgetRoutes);
+app.use('/api/goals', goalRoutes);
 
 //Api routes for Middleware testing
 app.use(errorHandlerMiddleware);
-app.use(errorHandler);
+
 
 
 // Sample route to test the server

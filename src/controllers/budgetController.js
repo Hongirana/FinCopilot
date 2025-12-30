@@ -1,5 +1,5 @@
 const prisma = require('../prismaClient');
-const { successResponse, errorResponse } = require('../utils/responseHelper');
+const { successResponse, errorResponse } = require('../utils/responseHelper.js');
 const categoryRules = require('../lib/catergoryRules.json');
 const budgetPeriod = ['daily', 'weekly', 'monthly', 'yearly'];
 

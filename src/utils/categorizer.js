@@ -2,50 +2,39 @@ const CATEGORY_RULES = require('../lib/catergoryRules.json');
 
 /**
  * Auto-categorize a transaction based on merchant and description
+ * 
+ * How it works:
+ * 1. Combines merchant + description into search text
+ * 2. Checks each category's keywords
+ * 3. Returns first matching category or "other"
+ * 
  * @param {string} merchant - Merchant name (e.g., "Domino's Pizza")
  * @param {string} description - Transaction description (optional)
- * @returns {string} - Suggested category (e.g., "food") or "other"
+ * @returns {string} - Category (e.g., "food") or "other"
+ * 
+ * @example
+ * categorizeTransaction("Domino's", "Pizza delivery")  // Returns: "food"
+ * categorizeTransaction("Uber", "Ride to work")        // Returns: "transport"
+ * categorizeTransaction("Unknown Store", "")           // Returns: "other"
  */
-const categorizeTransaction = (merchant, description) => {
-    // Check if the merchant is in the CATEGORY_RULES object
-    const merchantCategory = CATEGORY_RULES[merchant.toLowerCase()];
-    if (merchantCategory) {
-        // If the merchant is in the object, use the category from the object
-        return merchantCategory;
+const categorizeTransaction = (merchant = '', description = '') => {
+    // Step 1: Combine merchant and description into lowercase search text
+    const searchText = `${merchant.toLowerCase()} ${description.toLowerCase()}`.trim();
+
+    // Step 2: Loop through each category and its keywords
+    for (const [category, keywords] of Object.entries(CATEGORY_RULES)) {
+        // Step 3: Check if any keyword matches
+        for (const keyword of keywords) {
+            if (searchText.includes(keyword.toLowerCase())) {
+                console.log(`✅ Auto-categorized as "${category}" (matched keyword: "${keyword}")`);
+                return category;
+            }
+        }
     }
 
-    // If the merchant is not in the object, check if the description matches any of the categories
-    const categoryMatches = Object.keys(CATEGORY_RULES).filter((category) => {
-        const regex = new RegExp(CATEGORY_RULES[category].description, 'i');
-        return regex.test(description || '');
-    });
-
-    // If there are any matches, return the first match
-    if (categoryMatches.length > 0) {
-        return categoryMatches[0];
-    }
-
-    // If there are no matches, return "other"
+    // Step 4: No match found, return default
+    console.log(`⚠️  No category match found, defaulting to "other"`);
     return 'other';
-}
-
-
-// const categorizeTransaction = (merchant, description = '') => {
-//     // Combine merchant and description for keyword search
-//     const searchText = `${(merchant || '').toLowerCase()} ${(description || '').toLowerCase()}`;
-    
-//     // Loop through categories and check keywords
-//     for (const [category, keywords] of Object.entries(CATEGORY_RULES)) {
-//         for (const keyword of keywords) {
-//             if (searchText.includes(keyword.toLowerCase())) {
-//                 return category;  // ✅ Return category on first match
-//             }
-//         }
-//     }
-    
-//     // No match found
-//     return 'other';
-// };
-
+};
 
 module.exports = categorizeTransaction;

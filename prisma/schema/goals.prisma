@@ -4,19 +4,19 @@ model Goal {
   description   String?
   targetAmount  Decimal    @db.Decimal(15, 2)
   currentAmount Decimal    @default(0) @db.Decimal(15, 2)
-  deadline      DateTime?
+  deadline      DateTime // Made required (remove ?)
   status        GoalStatus @default(ACTIVE)
+  category      String? // Added - optional
+  priority      String     @default("medium") // Added - optional
   userId        String
   user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
-  @@map("goals")
   @@index([userId])
   @@index([status])
   @@index([deadline])
 }
-
 
 enum GoalStatus {
   ACTIVE
