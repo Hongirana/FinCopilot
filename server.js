@@ -10,6 +10,8 @@ const authRoutes = require('./src/routes/authRoutes');
 const accountRoutes = require('./src/routes/accountRoutes');
 const budgetRoutes = require('./src/routes/budgetRoutes');
 const goalRoutes = require('./src/routes/goalsRoutes');
+const analyticsRoutes = require('./src/routes/analyticsRoutes');
+const dashboardRoutes = require('./src/routes/dashboardRoutes');
 
 
 //Importing Middleware
@@ -28,6 +30,8 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/accounts', accountRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/goals', goalRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 //Api routes for Middleware testing
 app.use(errorHandlerMiddleware);
