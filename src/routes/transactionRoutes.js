@@ -13,8 +13,9 @@ const { transactionValidators, handleValidationErrors } = require('../middleware
 //   - [ ] `PUT /api/transactions/:id` → `updateTransaction`.
 
 router.get('/', authMiddleware, transactionController.listTransactions);
+router.get('/search', authMiddleware, transactionController.searchTransactions);
 router.post('/', authMiddleware, transactionValidators.create, handleValidationErrors, transactionController.createTransaction);
 router.get('/:id', authMiddleware, transactionController.getTransactionById);
 router.put('/:id', authMiddleware, transactionValidators.create, handleValidationErrors, transactionController.updateTransaction);
-
+router.delete('/:id', authMiddleware, transactionController.deleteTransaction);
 module.exports = router;
