@@ -1217,3 +1217,134 @@ DELETE /api/goals/:id
 GET /api/goals/stats
 
 
+✅ DAY 12 COMPLETE - GIT COMMIT & DOCUMENTATION
+Time: 8:00 PM IST
+Total Duration: 1 hour 33 minutes (Estimated 4 hours - 2.5x faster!) 🔥
+Status: 100% COMPLETE
+​
+
+GIT COMMIT MESSAGE
+bash
+git add .
+git commit -m "feat: complete Day 12 advanced filtering, pagination, and search
+
+Features:
+- Query builder utility for dynamic Prisma filters
+- Advanced transaction filtering (category, type, date range, amount, merchant)
+- Multi-field search across description, merchant, and notes
+- Pagination with metadata (total, page, limit, totalPages, hasMore)
+- Dynamic sorting with configurable fields and order
+- Dedicated search endpoint with validation
+
+Components:
+- src/utils/queryBuilder.js (5 helper functions)
+- Updated src/controllers/transactionController.js (listTransactions, searchTransactions)
+- Updated src/routes/transactionRoutes.js (added search route and DELETE route)
+
+Technical Highlights:
+- Category array support (single or multiple categories)
+- Case-insensitive search with min 3 character validation
+- Pagination limits (max 100 items, default 20 for list, 50 for search)
+- Date range filtering with proper time boundaries (00:00:00 to 23:59:59)
+- Amount range filtering with parseFloat conversion
+- Security: userId filtering on all endpoints
+
+API Endpoints Enhanced:
+- GET /api/transactions (with 10+ query parameters)
+- GET /api/transactions/search (dedicated search with filters)
+- DELETE /api/transactions/:id (route added)
+
+Query Builder Functions:
+1. buildTransactionFilters - Main filter combination
+2. buildDateFilter - Date range with time boundaries
+3. buildAmountFilter - Amount range validation
+4. buildSearchFilter - Multi-field case-insensitive search
+5. buildPaginationParams - Skip/take calculation with limits
+
+Testing:
+- Comprehensive testing planned for Day 14
+- All syntax validated, no errors
+
+Week 2 Progress: 64% complete (Days 8-12 done, Days 13-14 remaining)"
+README.md UPDATE
+Add this section to your project README:
+
+text
+## Day 12: Advanced Filtering, Pagination & Search ✅
+
+**Date Completed:** January 2, 2026  
+**Duration:** 1h 33m  
+**Status:** Complete
+
+### Features Implemented
+
+#### 1. Query Builder Utility (`src/utils/queryBuilder.js`)
+Reusable dynamic filter builder for Prisma queries with 5 core functions:
+
+- **buildTransactionFilters(userId, filters)** - Main filter combiner
+- **buildDateFilter(startDate, endDate)** - Date range filtering
+- **buildAmountFilter(minAmount, maxAmount)** - Amount range filtering
+- **buildSearchFilter(searchText)** - Multi-field text search
+- **buildPaginationParams(page, limit)** - Pagination with validation
+
+#### 2. Enhanced Transaction Listing
+**Endpoint:** `GET /api/transactions`
+
+**Query Parameters:**
+- `category` - Filter by category (string or array)
+- `type` - Transaction type (income/expense)
+- `startDate` - Start date (YYYY-MM-DD)
+- `endDate` - End date (YYYY-MM-DD)
+- `minAmount` - Minimum amount
+- `maxAmount` - Maximum amount
+- `search` - Text search across description, merchant, notes
+- `accountId` - Filter by account
+- `merchant` - Filter by merchant name
+- `page` - Page number (default: 1)
+- `limit` - Items per page (default: 20, max: 100)
+- `sortBy` - Sort field (default: 'date')
+- `sortOrder` - Sort order ('asc' or 'desc', default: 'desc')
+
+**Response Format:**
+```json
+{
+  "success": true,
+  "message": "Transactions fetched successfully",
+  "data": {
+    "transactions": [...],
+    "metadata": {
+      "total": 150,
+      "page": 1,
+      "limit": 20,
+      "totalPages": 8,
+      "hasMore": true
+    }
+  }
+}
+3. Dedicated Search Endpoint
+Endpoint: GET /api/transactions/search
+
+Features:
+
+Required search parameter (min 3 characters)
+
+Searches across description, merchant, and notes fields
+
+Case-insensitive search
+
+Combinable with other filters
+
+Higher default limit (50 items)
+
+Returns search term in response
+
+Example Request:
+
+text
+GET /api/transactions/search?search=coffee&category=Food&startDate=2026-01-01
+4. Route Enhancements
+Added /search route (placed before /:id to avoid conflicts)
+
+Added missing DELETE /:id route
+
+All routes protected with authentication middleware
