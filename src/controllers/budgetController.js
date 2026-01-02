@@ -3,6 +3,9 @@ const { successResponse, errorResponse } = require('../utils/responseHelper.js')
 const categoryRules = require('../lib/catergoryRules.json');
 const budgetPeriod = ['daily', 'weekly', 'monthly', 'yearly'];
 
+const { asyncHandler } = require('../middleware/errorHandler');
+const { NotFoundError, ValidationError, BadRequestError } = require('../utils/customErrors');
+
 // **Features to Build:**
 // 1. **Create Budget**: Set spending limits per category
 // 2. **List Budgets**: Get all budgets for user (with filters)
@@ -12,7 +15,7 @@ const budgetPeriod = ['daily', 'weekly', 'monthly', 'yearly'];
 // 6. **Budget Alerts**: Identify over-budget categories
 
 //Main Fetature functions
-const createBudget = async (req, res) => {
+const createBudget = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const { category, amount, period, startDate, endDate } = req.body;
 
@@ -20,75 +23,60 @@ const createBudget = async (req, res) => {
         return errorResponse(res, 400, 'Missing required fields');
     }
 
-    try {
-        const validateValues = await validateBudgetValues(category, amount, period, startDate, endDate);
 
-        if (!validateValues.status && validateValues.message) {
-            return errorResponse(res, 400, validateValues.message);
-        }
+    const validateValues = await validateBudgetValues(category, amount, period, startDate, endDate);
 
-        const overLappedBugdet = await overLappingBudget(category, userId, startDate, endDate);
-
-        if (overLappedBugdet) {
-            return errorResponse(res, 400, 'Budget already exists for this category');
-        }
-
-        const budget = await prisma.budget.create({
-            data: {
-                category: category.toLowerCase(),
-                amount,
-                period: period.toUpperCase(),
-                startDate : new Date(startDate),
-                endDate : new Date(endDate),
-                userId
-            }
-        });
-
-        return successResponse(res, 201, 'Budget created successfully', budget);
+    if (!validateValues.status && validateValues.message) {
+        throw new ValidationError(validateValues.message);
     }
-    catch (err) {
-        console.error(err);
-        return errorResponse(res, 500, 'Server error');
-    }
-}
 
-const listUserBudgets = async (req, res) => {
+    const overLappedBugdet = await overLappingBudget(category, userId, startDate, endDate);
+
+    if (overLappedBugdet) {
+        throw new ConflictError('Budget already exists for this category in the specified period');
+    }
+
+    const budget = await prisma.budget.create({
+        data: {
+            category: category.toLowerCase(),
+            amount,
+            period: period.toUpperCase(),
+            startDate: new Date(startDate),
+            endDate: new Date(endDate),
+            userId
+        }
+    });
+
+    return successResponse(res, 201, 'Budget created successfully', budget);
+
+})
+
+const listUserBudgets = asyncHandler(async (req, res) => {
     const { period, category, active } = req.query;
     const userId = req.user.id;
-
     const filter = {
         where: {
             userId: userId,
-            ...(category && { category : category.toLowerCase() }),
-            ...(period && { period : period.toUpperCase() }),   
+            ...(category && { category: category.toLowerCase() }),
+            ...(period && { period: period.toUpperCase() }),
         }
     }
-
-    if (active) {
+    if (active === 'true') {
         filter.where.startDate = { lte: new Date() };
         filter.where.endDate = { gte: new Date() };
     }
-
-    try {
-        const validateValues = await validateBudgetValues(category, null, period, null, null);
-        if (!validateValues.status && validateValues.message) {
-            return errorResponse(res, 400, validateValues.message);
-        }
-
-        const budgets = await prisma.budget.findMany(filter);
-
-        const budgetDatawithStatus = await getbudgetStatus(budgets);
-
-        return successResponse(res, 200, 'Budgets fetched successfully', budgetDatawithStatus);
+    const validateValues = await validateBudgetValues(category, null, period, null, null);
+    if (!validateValues.status && validateValues.message) {
+        throw new ValidationError(validateValues.message);
     }
-    catch (err) {
-        console.error(err);
-        return errorResponse(res, 500, 'Server error');
-    }
-}
+
+    const budgets = await prisma.budget.findMany(filter);
+    const budgetDatawithStatus = await getbudgetStatus(budgets);
+    return successResponse(res, 200, 'Budgets fetched successfully', budgetDatawithStatus);
+})
 
 
-const getBudgetById = async (req, res) => {
+const getBudgetById = asyncHandler(async (req, res) => {
     const budgetId = req.params.id;
     const userId = req.user.id;
 
@@ -98,16 +86,16 @@ const getBudgetById = async (req, res) => {
             userId: userId
         }
     });
-    if (!budgets) { return errorResponse(res, 404, 'Budget not found'); }
+    if (!budgets) { throw new NotFoundError('Budget not found'); }
     else {
         const budgetDatawithStatus = await getbudgetStatus([budgets]);
 
         return successResponse(res, 200, 'Budgets fetched successfully', budgetDatawithStatus);
     }
-}
+})
 
 
-const updateBudget = async (req, res) => {
+const updateBudget = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const budgetId = req.params.id;
 
@@ -116,98 +104,73 @@ const updateBudget = async (req, res) => {
     if (!category || !amount || !period || !startDate || !endDate) {
         return errorResponse(res, 400, 'Missing required fields');
     }
-    try {
-        const validateValues = await validateBudgetValues(category, amount, period, startDate, endDate);
-
-        if (!validateValues.status && validateValues.message) {
-            return errorResponse(res, 400, validateValues.message);
-        }
-
-        const budgetData = await prisma.budget.findFirst({ where: { id: budgetId, userId: userId } });
-        if (!budgetData) return errorResponse(res, 404, 'Budget not found');
-
-        const updateData = {
-            ...(category && { category: category.toLowerCase() }),
-            ...(amount && { amount }),
-            ...(period && { period: period.toUpperCase() }),
-            ...(startDate && { startDate : new Date(startDate) }),
-            ...(endDate && { endDate : new Date(endDate) }),
-        }
-
-        const updateBudget = await prisma.budget.update({ where: { id: budgetId }, data: updateData });
-
-        return successResponse(res, 200, 'Budget updated successfully', updateBudget);
-    } catch (err) {
-        console.error(err);
-        return errorResponse(res, 500, 'Server error');
+    const validateValues = await validateBudgetValues(category, amount, period, startDate, endDate);
+    if (!validateValues.status && validateValues.message) {
+        throw new ValidationError(validateValues.message);
     }
-}
+
+    const budgetData = await prisma.budget.findFirst({ where: { id: budgetId, userId: userId } });
+    if (!budgetData) throw new NotFoundError('Budget not found');
+
+    const updateData = {
+        ...(category && { category: category.toLowerCase() }),
+        ...(amount && { amount }),
+        ...(period && { period: period.toUpperCase() }),
+        ...(startDate && { startDate: new Date(startDate) }),
+        ...(endDate && { endDate: new Date(endDate) }),
+    }
+
+    const updateBudget = await prisma.budget.update({ where: { id: budgetId }, data: updateData });
+    return successResponse(res, 200, 'Budget updated successfully', updateBudget);
+})
 
 
-const deleteBudget = async (req, res) => {
+const deleteBudget = asyncHandler(async (req, res) => {
     const budgetId = req.params.id;
     const userId = req.user.id;
-    try {
-        const budgetData = await prisma.budget.findFirst({ where: { id: budgetId, userId: userId } });
-        if (!budgetData) return errorResponse(res, 404, 'Budget not found');
 
-        await prisma.budget.delete({ where: { id: budgetId } });
-        return successResponse(res, 200, 'Budget deleted successfully');
-    } catch (err) {
-        console.error(err);
-        return errorResponse(res, 500, 'Server error');
-    }
-}
+    const budgetData = await prisma.budget.findFirst({ where: { id: budgetId, userId: userId } });
+    if (!budgetData) throw new NotFoundError('Budget not found');
 
-const budgetAlerts = async (req, res) => {
+    await prisma.budget.delete({ where: { id: budgetId } });
+    return successResponse(res, 200, 'Budget deleted successfully');
+})
+
+const budgetAlerts = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const threshold = parseInt(req.query.threshold) || 80; // Default 80%
 
-    try {
-        const budgetData = await prisma.budget.findMany({
-            where: {
-                userId,
-                startDate: { lte: new Date() },
-                endDate: { gte: new Date() }
-            }
-        });
+    const budgetData = await prisma.budget.findMany({
+        where: {
+            userId,
+            startDate: { lte: new Date() },
+            endDate: { gte: new Date() }
+        }
+    });
 
-        const alerts = budgetData
-            .map(budget => {
-                const percentSpent = (Number(budget.spent) / Number(budget.amount)) * 100;
+    const alerts = budgetData
+        .map(budget => {
+            const percentSpent = (Number(budget.spent) / Number(budget.amount)) * 100;
 
-                return {
-                    ...budget,
-                    percentSpent: percentSpent.toFixed(2),
-                    isOverBudget: percentSpent > 100,
-                    isNearLimit: percentSpent >= threshold && percentSpent <= 100
-                };
-            })
-            .filter(budget => budget.isOverBudget || budget.isNearLimit);
+            return {
+                ...budget,
+                percentSpent: percentSpent.toFixed(2),
+                isOverBudget: percentSpent > 100,
+                isNearLimit: percentSpent >= threshold && percentSpent <= 100
+            };
+        })
+        .filter(budget => budget.isOverBudget || budget.isNearLimit);
 
-        return successResponse(res, 200, 'Budgets fetched successfully', alerts);
-    }
-    catch (err) {
-        console.error(err);
-        return errorResponse(res, 500, 'Server error');
-    }
-}
+    return successResponse(res, 200, 'Budgets fetched successfully', alerts);
+})
 
 
-const recalculateBudgets = async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const { recalculateAllBudgets } = require('../utils/budgetTracker');
-        
-        const result = await recalculateAllBudgets(userId);
-        
-        return successResponse(res, 200, 'Budgets recalculated successfully', result);
-        
-    } catch (error) {
-        console.error('Recalculate budgets error:', error);
-        return errorResponse(res, 500, 'Failed to recalculate budgets');
-    }
-};
+const recalculateBudgets = asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const { recalculateAllBudgets } = require('../utils/budgetTracker');
+    const result = await recalculateAllBudgets(userId);
+    return successResponse(res, 200, 'Budgets recalculated successfully', result);
+});
 
 
 module.exports = {

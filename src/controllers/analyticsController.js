@@ -16,22 +16,23 @@ const {
     getTrendbyPeriod,
     getIncomeOrExpense
 } = require('../utils/analyticsUtils.js');
+const { asyncHandler } = require('../middleware/errorHandler');
+const { NotFoundError, ValidationError, BadRequestError } = require('../utils/customErrors');
 
-
-const getSpendsByCategory = async (req, res) => {
+const getSpendsByCategory =asyncHandler ( async (req, res) => {
     const { startDate, endDate, accountId } = req.query;
     const userId = req.user.id;
-    try {
+    
         const validDates = await validateandGetDate(startDate, endDate);
         if (!validDates.isValid && validDates.message) {
-            return errorResponse(res, 400, validDates.message);
+            throw new ValidationError(validDates.message);
         }
 
         validDates.startDate = new Date(validDates.startDate);
         validDates.endDate = new Date(validDates.endDate);
 
         if (validDates.startDate > validDates.endDate) {
-            return errorResponse(res, 400, 'Start date must be before end date');
+            throw new ValidationError('Start date cannot be greater than end date');
         }
 
         const debitCategoryData = await categoryBreakDown('debit', validDates.startDate, validDates.endDate, accountId, userId);
@@ -70,31 +71,24 @@ const getSpendsByCategory = async (req, res) => {
             netSavings: netSavings.toFixed(2),
             categoryBreakdown: categoryBreakdown
         });
+})
 
-    }
-    catch (err) {
-        console.error(err);
-        return errorResponse(res, 500, 'Server error');
-    }
-
-}
-
-const getMonthlyReport = async (req, res) => {
+const getMonthlyReport =asyncHandler( async (req, res) => {
     const userId = req.user.id;
     const month = parseInt(req.query.month);
     const year = parseInt(req.query.year);
     const { accountId } = req.query;
-    try {
+    
         if (!month || !year) {
-            return errorResponse(res, 400, 'Month and year are required');
+            throw new ValidationError('Provide month and year for report');
         }
         const isValidYear = validateYear(year);
         if (!isValidYear) {
-            return errorResponse(res, 400, 'Provide reasonable year for report');
+            throw new ValidationError('Provide reasonable year for report');
         }
 
         if (month < 1 || month > 12) {
-            return errorResponse(res, 400, 'Provide reasonable month for report');
+            throw new ValidationError('Provide reasonable month for report');
         }
 
         const dateRange = await getMonthRange(year, month);
@@ -137,15 +131,11 @@ const getMonthlyReport = async (req, res) => {
                     changeAmount: changeAmount.toFixed(2)
                 }
             }
-        });
-    } catch (err) {
-        console.error(err);
-        return errorResponse(res, 500, 'Server error');
-    }
-}
+        });  
+})
 
-const getTopCategories = async (req, res) => {
-    try {
+const getTopCategories =asyncHandler( async (req, res) => {
+    
         const userId = req.user.id;
         let limit = parseInt(req.query.limit) || 5;
 
@@ -199,27 +189,22 @@ const getTopCategories = async (req, res) => {
             },
             totalSpending: totalSpending.toFixed(2),
             topCategories: topCategories
-        });
+        });    
+});
 
-    } catch (err) {
-        console.error('Get top categories error:', err);
-        return errorResponse(res, 500, 'Failed to fetch top categories');
-    }
-};
-
-const getYearlySummary = async (req, res) => {
+const getYearlySummary =asyncHandler( async (req, res) => {
     const userId = req.user.id;
     const year = parseInt(req.query.year);
     const { accountId } = req.query;
-    try {
+    
         if (!year) {
-            return errorResponse(res, 400, 'Year is required');
+            throw new ValidationError('Year is required');
         }
 
         const isValidYear = validateYear(year);
 
         if (!isValidYear) {
-            return errorResponse(res, 400, 'Provide Reasonable and Valid Year');
+           throw new ValidationError('Provide reasonable year for report'); 
         }
 
         const startDate = new Date(year, 0, 1);
@@ -262,21 +247,17 @@ const getYearlySummary = async (req, res) => {
             topCategories: topCategories,
             quarterlyBreakdown: quarterlyBreakdown
         });
-    } catch (error) {
-        return errorResponse(res, 500, error.message);
-    }
+})
 
-}
-
-const getSpendingTrends = async (req, res) => {
-    try {
+const getSpendingTrends =asyncHandler( async (req, res) => {
+    
         const userId = req.user.id;
         const period = req.query.period;
         let compare = parseInt(req.query.compare) || 3;
 
         // Step 1: Validate
         if (!period || !['week', 'month', 'year'].includes(period)) {
-            return errorResponse(res, 400, 'Period must be week, month, or year');
+            throw new ValidationError('Invalid period');
         }
 
         if (compare < 2) compare = 2;
@@ -350,21 +331,16 @@ const getSpendingTrends = async (req, res) => {
             overallTrend: overallTrend,
             averageChange: averageChange >= 0 ? `+${averageChange}` : averageChange
         });
+});
 
-    } catch (err) {
-        console.error('Get spending trends error:', err);
-        return errorResponse(res, 500, 'Failed to fetch spending trends');
-    }
-};
-
-const getDateRangeReport = async (req, res) => {
-    try {
+const getDateRangeReport =asyncHandler( async (req, res) => {
+    
         const userId = req.user.id;
         const { startDate: queryStartDate, endDate: queryEndDate, accountId } = req.query;
 
         // Step 1: Validate dates are provided
         if (!queryStartDate || !queryEndDate) {
-            return errorResponse(res, 400, 'Start date and end date are required');
+            throw new ValidationError('Start date and end date are required');
         }
 
         const startDate = new Date(queryStartDate);
@@ -372,7 +348,7 @@ const getDateRangeReport = async (req, res) => {
 
         // Validate start before end
         if (startDate > endDate) {
-            return errorResponse(res, 400, 'Start date must be before end date');
+            throw new ValidationError('Start date cannot be greater than end date');
         }
 
         // Step 2: Calculate number of days
@@ -422,13 +398,8 @@ const getDateRangeReport = async (req, res) => {
                 savingsRate: savingsRate.toFixed(2)
             },
             categoryBreakdown: categoryBreakdown
-        });
-
-    } catch (err) {
-        console.error('Get date range report error:', err);
-        return errorResponse(res, 500, 'Failed to fetch date range report');
-    }
-};
+        }); 
+});
 
 
 module.exports = {

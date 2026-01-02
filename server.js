@@ -15,10 +15,16 @@ const dashboardRoutes = require('./src/routes/dashboardRoutes');
 
 
 //Importing Middleware
-const errorHandlerMiddleware = require('./src/middleware/errorHandlingMiddleware');
+// const errorHandlerMiddleware = require('./src/middleware/errorHandlingMiddleware');
+const {
+  errorHandler,
+  notFoundHandler,
+  requestLogger
+} = require('./src/middleware/errorHandler');
 
 
 app.use(express.json());
+app.use(requestLogger);
 console.log("FinCopilot Project Initialized Version 1.0.0");
 
 // API routes for Authentication
@@ -34,8 +40,6 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
 //Api routes for Middleware testing
-app.use(errorHandlerMiddleware);
-
 
 
 // Sample route to test the server
@@ -48,10 +52,12 @@ app.post('/update', (req, res) => {
   res.send('Financial data analysis in progress...');
 });
 
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
-});
+// app.use(errorHandlerMiddleware);
+app.use(notFoundHandler);
+
+// Global Error Handler (must be LAST middleware)
+app.use(errorHandler);
+
 
 app.listen(port, () => {
   console.log(`FinCopilot Project is running at http://localhost:${port}`);

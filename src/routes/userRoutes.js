@@ -9,7 +9,14 @@ const authMiddleware = require('../middleware/authMiddleware');
 
 
 router.get('/', authMiddleware ,  userController.getUsers);
-router.get('/:id', authMiddleware, userController.getUserById);
 router.post('/', userController.createUser);
+router.get('/:id', authMiddleware, userController.getUserById);
+
+router.get('/me/profile', authMiddleware, userController.getMyProfile);
+router.get('/me/stats', authMiddleware, userController.getMyStats);
+router.put('/me', authMiddleware, userController.updateMyProfile);
+router.put('/me/password', authMiddleware, userController.updatePassword);
+router.delete('/me', authMiddleware, userController.deleteMyAccount);
+
 
 module.exports = router;

@@ -19,116 +19,106 @@ const {
 } = require('../utils/dashboardUtils');
 const { getMonthRange, getMonthName } = require('../utils/dateHelper');
 
+const { asyncHandler } = require('../middleware/errorHandler');
+const { NotFoundError, ValidationError, BadRequestError } = require('../utils/customErrors');
 
-const getDashboardSummary = async (req, res) => {
+
+const getDashboardSummary = asyncHandler(async (req, res) => {
     const userId = req.user.id;
-    try {
-        const date = new Date();
-        const year = date.getFullYear();
-        const month = date.getMonth() + 1;
-        const monthRange = await getMonthRange(year, month);
-        const startDate = monthRange.startDate
-        const endDate = monthRange.endDate;
-        const monthName = await getMonthName(month);
 
-        // Helper 1: Current Month Summary
-        const currentMonthData = await genMonthlyReport(startDate, endDate, null, userId);
-        // Helper 2: Previous Month Comparison
-        const prevMonthReport = await genPrevMonthReport(month, year, null, userId, currentMonthData.totalExpenses);
-        // 3. Budget Overview
-        const budgetOverview = await getBudgetOverview(userId, startDate, endDate);
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const monthRange = await getMonthRange(year, month);
+    const startDate = monthRange.startDate
+    const endDate = monthRange.endDate;
+    const monthName = await getMonthName(month);
 
-        // 4. Goals Overview
-        const goalsOverview = await getGoalsOverview(userId);
+    // Helper 1: Current Month Summary
+    const currentMonthData = await genMonthlyReport(startDate, endDate, null, userId);
+    // Helper 2: Previous Month Comparison
+    const prevMonthReport = await genPrevMonthReport(month, year, null, userId, currentMonthData.totalExpenses);
+    // 3. Budget Overview
+    const budgetOverview = await getBudgetOverview(userId, startDate, endDate);
 
-        // 5. Accounts Summary
-        const accountsSummary = await getAccountsSummary(userId);
+    // 4. Goals Overview
+    const goalsOverview = await getGoalsOverview(userId);
 
-        return successResponse(res, 200, 'Dashboard summary fetched successfully', {
-            currentMonth: {
-                month: month,
-                year: year,
-                monthName: monthName,
-                ...currentMonthData
-            },
-            previousMonth: prevMonthReport,
-            budgetOverview: budgetOverview,
-            goalsOverview: goalsOverview,
-            accounts: accountsSummary
-        });
-    } catch (err) {
-        console.error('Dashboard summary error:', err);
-        return errorResponse(res, 500, 'Failed to fetch dashboard summary');
-    }
-}
+    // 5. Accounts Summary
+    const accountsSummary = await getAccountsSummary(userId);
 
-const getFinancialStats = async (req, res) => {
-    try {
-        const userId = req.user.id;
+    return successResponse(res, 200, 'Dashboard summary fetched successfully', {
+        currentMonth: {
+            month: month,
+            year: year,
+            monthName: monthName,
+            ...currentMonthData
+        },
+        previousMonth: prevMonthReport,
+        budgetOverview: budgetOverview,
+        goalsOverview: goalsOverview,
+        accounts: accountsSummary
+    });
+})
 
-        // 1. Net Worth Calculation
-        const netWorth = await calculateNetWorth(userId);
+const getFinancialStats = asyncHandler(async (req, res) => {
 
-        // 2. Cash Flow (Last 30 days)
-        const cashFlow = await calculateCashFlow(userId);
+    const userId = req.user.id;
 
-        // 3. Spending Velocity
-        const spendingVelocity = await calculateSpendingVelocity(userId);
+    // 1. Net Worth Calculation
+    const netWorth = await calculateNetWorth(userId);
 
-        // 4. Savings Metrics
-        const savingsMetrics = await calculateSavingsMetrics(userId);
+    // 2. Cash Flow (Last 30 days)
+    const cashFlow = await calculateCashFlow(userId);
 
-        // 5. Top Expense Categories (Current Month)
-        const topExpenseCategories = await getTopExpenseCategories(userId);
+    // 3. Spending Velocity
+    const spendingVelocity = await calculateSpendingVelocity(userId);
 
-        return successResponse(res, 200, 'Financial stats fetched successfully', {
-            netWorth: netWorth,
-            cashFlow: cashFlow,
-            spendingVelocity: spendingVelocity,
-            savingsMetrics: savingsMetrics,
-            topExpenseCategories: topExpenseCategories
-        });
+    // 4. Savings Metrics
+    const savingsMetrics = await calculateSavingsMetrics(userId);
 
-    } catch (err) {
-        console.error('Financial stats error:', err);
-        return errorResponse(res, 500, 'Failed to fetch financial stats');
-    }
-};
+    // 5. Top Expense Categories (Current Month)
+    const topExpenseCategories = await getTopExpenseCategories(userId);
 
-const getQuickOverview = async (req, res) => {
-    try {
-        const userId = req.user.id;
-        // 1. Accounts Overview
-        const accountsOverview = await getAccountsOverview(userId);
+    return successResponse(res, 200, 'Financial stats fetched successfully', {
+        netWorth: netWorth,
+        cashFlow: cashFlow,
+        spendingVelocity: spendingVelocity,
+        savingsMetrics: savingsMetrics,
+        topExpenseCategories: topExpenseCategories
+    });
+});
 
-        // 2. Budgets Overview
-        const budgetsOverview = await getBudgetsQuickOverview(userId);
+const getQuickOverview = asyncHandler(async (req, res) => {
 
-        // 3. Goals Overview
-        const goalsQuickOverview = await getGoalsQuickOverview(userId);
+    const userId = req.user.id;
+    // 1. Accounts Overview
+    const accountsOverview = await getAccountsOverview(userId);
 
-        // 4. Transactions Overview
-        const transactionsOverview = await getTransactionsOverview(userId);
+    // 2. Budgets Overview
+    const budgetsOverview = await getBudgetsQuickOverview(userId);
 
-        // 5. Recent Transactions (Last 5)
-        const recentTransactions = await getRecentTransactions(userId, 5);
+    // 3. Goals Overview
+    const goalsQuickOverview = await getGoalsQuickOverview(userId);
 
-        // 6. Alerts & Notifications
-        const alerts = await generateAlerts(userId);
+    // 4. Transactions Overview
+    const transactionsOverview = await getTransactionsOverview(userId);
 
-        return successResponse(res, 200, 'Dashboard overview fetched successfully', {
-            accountsOverview: accountsOverview,
-            budgetsOverview: budgetsOverview,
-            goalsOverview: goalsQuickOverview,
-            transactionsOverview: transactionsOverview,
-            recentTransactions: recentTransactions,
-            alerts: alerts
-        });
-    } catch (err) {
-        console.error('Quick overview error:', err);
-        return errorResponse(res, 500, 'Failed to fetch quick overview');
-    }
-}
+    // 5. Recent Transactions (Last 5)
+    const recentTransactions = await getRecentTransactions(userId, 5);
+
+    // 6. Alerts & Notifications
+    const alerts = await generateAlerts(userId);
+
+    return successResponse(res, 200, 'Dashboard overview fetched successfully', {
+        accountsOverview: accountsOverview,
+        budgetsOverview: budgetsOverview,
+        goalsOverview: goalsQuickOverview,
+        transactionsOverview: transactionsOverview,
+        recentTransactions: recentTransactions,
+        alerts: alerts
+    });
+})
 
 
 module.exports = {
