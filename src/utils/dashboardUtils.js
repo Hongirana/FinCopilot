@@ -1,6 +1,7 @@
 //Helper Functions
 const prisma = require('../prismaClient');
 const { getMonthRange, getMonthName } = require('../utils/dateHelper');
+const { genMonthlyReport, genPrevMonthReport } = require('../utils/analyticsUtils.js');
 
 const getBudgetOverview = async (userId, startDate, endDate) => {
 
@@ -8,11 +9,12 @@ const getBudgetOverview = async (userId, startDate, endDate) => {
         where: {
             userId: userId,
             OR: [
-                { period: 'monthly' },
                 {
-                    period: 'custom',
-                    startDate: { lte: endDate },
-                    endDate: { gte: startDate }
+                    // Budget starts before or on endDate AND ends after or on startDate
+                    AND: [
+                        { startDate: { lte: endDate } },
+                        { endDate: { gte: startDate } }
+                    ]
                 }
             ]
         }
@@ -312,8 +314,8 @@ const getBudgetsQuickOverview = async (userId) => {
     });
 
     const activeBudgets = allBudgets.filter(b => {
-        if (b.period === 'monthly') return true;
-        if (b.period === 'custom') {
+        if (b.period === 'MONTHLY') return true;
+        if (b.period === 'CUSTOM') {
             return b.startDate <= endDate && b.endDate >= startDate;
         }
         return false;
@@ -466,9 +468,9 @@ const generateAlerts = async (userId) => {
         where: {
             userId: userId,
             OR: [
-                { period: 'monthly' },
+                { period: 'MONTHLY' },
                 {
-                    period: 'custom',
+                    period: 'CUSTOM',
                     startDate: { lte: endDate },
                     endDate: { gte: startDate }
                 }
@@ -508,7 +510,7 @@ const generateAlerts = async (userId) => {
 
     // Check goal milestones
     const goals = await prisma.goal.findMany({
-        where: { userId: userId, status: 'active' }
+        where: { userId: userId, status: 'ACTIVE' }
     });
 
     for (const goal of goals) {

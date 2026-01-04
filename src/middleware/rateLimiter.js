@@ -5,7 +5,7 @@ const rateLimit = require('express-rate-limit');
  */
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit to 5 requests per windowMs
+  max: 50, // limit to 5 requests per windowMs
   message: {
     success: false,
     error: {
@@ -22,7 +22,7 @@ const loginLimiter = rateLimit({
  */
 const signupLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // limit to 10 requests per windowMs
+  max: 50, // limit to 10 requests per windowMs
   message: {
     success: false,
     error: {

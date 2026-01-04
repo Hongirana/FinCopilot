@@ -30,14 +30,14 @@ const errorHandler = (err, req, res, next) => {
 
   // Log error for debugging (in development show full stack, in production log to file)
   if (process.env.NODE_ENV === 'development') {
-    console.error('Error Details:', {
+    console.log('Error Details:', {
       message: err.message,
       stack: err.stack,
       name: err.name,
       code: err.code
     });
   } else {
-    console.error(' Error:', err.message);
+    console.log('Error:', err.message);
   }
 
   // Handle Prisma Errors

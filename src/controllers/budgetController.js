@@ -4,7 +4,7 @@ const categoryRules = require('../lib/catergoryRules.json');
 const budgetPeriod = ['daily', 'weekly', 'monthly', 'yearly'];
 
 const { asyncHandler } = require('../middleware/errorHandler');
-const { NotFoundError, ValidationError, BadRequestError } = require('../utils/customErrors');
+const { NotFoundError, ValidationError, BadRequestError, ConflictError } = require('../utils/customErrors');
 
 // **Features to Build:**
 // 1. **Create Budget**: Set spending limits per category
@@ -20,12 +20,12 @@ const createBudget = asyncHandler(async (req, res) => {
     const { category, amount, period, startDate, endDate } = req.body;
 
     if (!category || !amount || !period || !startDate || !endDate) {
-        return errorResponse(res, 400, 'Missing required fields');
+        throw new NotFoundError('Missing required fields');
     }
 
-
+    console.log('Request Body', req.body);
     const validateValues = await validateBudgetValues(category, amount, period, startDate, endDate);
-
+    console.log(validateValues);
     if (!validateValues.status && validateValues.message) {
         throw new ValidationError(validateValues.message);
     }
@@ -46,8 +46,9 @@ const createBudget = asyncHandler(async (req, res) => {
             userId
         }
     });
+    console.log(budget);
 
-    return successResponse(res, 201, 'Budget created successfully', budget);
+    return successResponse(res, 201, 'Budget created successfully', { budget });
 
 })
 
@@ -72,7 +73,7 @@ const listUserBudgets = asyncHandler(async (req, res) => {
 
     const budgets = await prisma.budget.findMany(filter);
     const budgetDatawithStatus = await getbudgetStatus(budgets);
-    return successResponse(res, 200, 'Budgets fetched successfully', budgetDatawithStatus);
+    return successResponse(res, 200, 'Budgets fetched successfully', { budgets: budgetDatawithStatus });
 })
 
 
@@ -89,8 +90,8 @@ const getBudgetById = asyncHandler(async (req, res) => {
     if (!budgets) { throw new NotFoundError('Budget not found'); }
     else {
         const budgetDatawithStatus = await getbudgetStatus([budgets]);
-
-        return successResponse(res, 200, 'Budgets fetched successfully', budgetDatawithStatus);
+        console.log(budgetDatawithStatus);
+        return successResponse(res, 200, 'Budgets fetched successfully', { budget: budgetDatawithStatus[0] });
     }
 })
 
@@ -102,7 +103,7 @@ const updateBudget = asyncHandler(async (req, res) => {
     const { category, amount, period, startDate, endDate } = req.body;
 
     if (!category || !amount || !period || !startDate || !endDate) {
-        return errorResponse(res, 400, 'Missing required fields');
+        throw new NotFoundError('Missing required fields');
     }
     const validateValues = await validateBudgetValues(category, amount, period, startDate, endDate);
     if (!validateValues.status && validateValues.message) {
@@ -121,7 +122,7 @@ const updateBudget = asyncHandler(async (req, res) => {
     }
 
     const updateBudget = await prisma.budget.update({ where: { id: budgetId }, data: updateData });
-    return successResponse(res, 200, 'Budget updated successfully', updateBudget);
+    return successResponse(res, 200, 'Budget updated successfully', { budget: updateBudget });
 })
 
 
@@ -160,16 +161,17 @@ const budgetAlerts = asyncHandler(async (req, res) => {
             };
         })
         .filter(budget => budget.isOverBudget || budget.isNearLimit);
-
-    return successResponse(res, 200, 'Budgets fetched successfully', alerts);
+    console.log('Alerts:', alerts);
+    return successResponse(res, 200, 'Budgets fetched successfully', { alerts: alerts, threshold: threshold });
 })
 
 
 const recalculateBudgets = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const { recalculateAllBudgets } = require('../utils/budgetTracker');
+
     const result = await recalculateAllBudgets(userId);
-    return successResponse(res, 200, 'Budgets recalculated successfully', result);
+    return successResponse(res, 200, 'Budgets recalculated successfully', { recalculated: result.success });
 });
 
 
@@ -188,15 +190,26 @@ module.exports = {
 
 //Helper Functions 
 const isValidDate = (dateString) => {
-    const dateRegex = /^(\d{4}-\d{2}-\d{2})$/;
-    if (!dateRegex.test(dateString)) return false;;
+    // Check format pattern
+    const dateRegex = /^(\d{4})-(\d{2})-(\d{2})$/;
+    const match = dateString.match(dateRegex);
 
-    const date = new Date(dateString);
-    return !isNaN(date.getTime());
-}
+    if (!match) return false;
 
+    // Extract components
+    const year = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10);
+    const day = parseInt(match[3], 10);
 
+    // Create date and verify components match
+    const date = new Date(year, month - 1, day);
 
+    return (
+        date.getFullYear() === year &&
+        date.getMonth() === month - 1 &&
+        date.getDate() === day
+    );
+};
 
 
 const overLappingBudget = async (category, userId, startDate, endDate) => {
@@ -207,44 +220,46 @@ const overLappingBudget = async (category, userId, startDate, endDate) => {
             OR: [  // ✅ OR inside where
                 {
                     AND: [
-                        { startDate: { lte: startDate } },
-                        { endDate: { gte: startDate } }
+                        { startDate: { lte: new Date(startDate) } },
+                        { endDate: { gte: new Date(startDate) } }
                     ]
                 },
                 {
                     AND: [
-                        { startDate: { lte: endDate } },
-                        { endDate: { gte: endDate } }
+                        { startDate: { lte: new Date(endDate) } },
+                        { endDate: { gte: new Date(endDate) } }
                     ]
                 }
             ]
         }
-
     }
-    const bugdetData = await prisma.budget.findFirst(data);
-    return bugdetData ? true : false;
+    const budgetData = await prisma.budget.findFirst({ where: data.where });
+    return budgetData ? true : false;
 }
 
 
 const validateBudgetValues = async (category, amount, period, startDate, endDate) => {
-    if (amount < 0) {
+
+    if (amount !== null && amount !== undefined && amount < 0) {
         return { status: false, message: 'Amount cannot be negative' };
     }
 
-    if (categoryRules.hasOwnProperty(category.toLowerCase()) === false) {
-        return { status: false, message: `${category} 'Invalid category'` };
+    if (category && categoryRules.hasOwnProperty(category.toLowerCase()) === false) {
+        return { status: false, message: `${category} - Invalid category` };
     }
 
-    if (budgetPeriod.indexOf(period.toLowerCase()) === -1) {
+    if (period && budgetPeriod.indexOf(period.toLowerCase()) === -1) {
         return { status: false, message: 'Invalid period' };
     }
 
-    if (new Date(startDate) > new Date(endDate)) {
-        return { status: false, mesage: 'Start date cannot be after end date' };
-    }
+    if (startDate && endDate) {
+        if (new Date(endDate) <= new Date(startDate)) {
+            return { status: false, message: 'End date must be after start date' };  // Fixed typo: 'mesage' -> 'message'
+        }
 
-    if (!isValidDate(startDate) || !isValidDate(endDate)) {
-        return { status: false, message: 'Invalid date format' };
+        if (!isValidDate(startDate) || !isValidDate(endDate)) {
+            return { status: false, message: 'Invalid date format or date value (use YYYY-MM-DD)' };
+        }
     }
 
     return { status: true };
@@ -262,6 +277,6 @@ const getbudgetStatus = async (budgetData) => {
             (budget.endDate - new Date()) / (1000 * 60 * 60 * 24)
         )
     }));
-
+    console.log(budgetsWithStatus);
     return budgetsWithStatus;
 }

@@ -47,7 +47,7 @@ const getDashboardSummary = asyncHandler(async (req, res) => {
     // 5. Accounts Summary
     const accountsSummary = await getAccountsSummary(userId);
 
-    return successResponse(res, 200, 'Dashboard summary fetched successfully', {
+    const summary = {
         currentMonth: {
             month: month,
             year: year,
@@ -58,6 +58,10 @@ const getDashboardSummary = asyncHandler(async (req, res) => {
         budgetOverview: budgetOverview,
         goalsOverview: goalsOverview,
         accounts: accountsSummary
+    };
+
+    return successResponse(res, 200, 'Dashboard summary fetched successfully', {
+        summary: summary
     });
 })
 
@@ -80,13 +84,15 @@ const getFinancialStats = asyncHandler(async (req, res) => {
     // 5. Top Expense Categories (Current Month)
     const topExpenseCategories = await getTopExpenseCategories(userId);
 
-    return successResponse(res, 200, 'Financial stats fetched successfully', {
+    const financialStats = {
         netWorth: netWorth,
         cashFlow: cashFlow,
         spendingVelocity: spendingVelocity,
         savingsMetrics: savingsMetrics,
         topExpenseCategories: topExpenseCategories
-    });
+    }
+
+    return successResponse(res, 200, 'Financial stats fetched successfully', { financialStats: financialStats });
 });
 
 const getQuickOverview = asyncHandler(async (req, res) => {

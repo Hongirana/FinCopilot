@@ -1,5 +1,5 @@
 const { getMonthRange, getYearRange, getMonthName, getDaysInMonth, validateDateRange, validateDatetype } = require('./dateHelper');
-const { prisma } = require('../prismaClient');
+const  prisma  = require('../prismaClient');
 
 const genMonthlyReport = async (startDate, endDate, accountId, userId) => {
     const incomeData = await getIncomeOrExpense('credit', startDate, endDate, accountId, userId);
@@ -65,7 +65,7 @@ const genPrevMonthReport = async (month, year, accountId, userId, totalExpenses)
 }
 
 const getIncomeOrExpense = async (type, startDate, endDate, accountId, userId) => {
-
+    console.log('Inside getIncomeOrExpense');
     const totalAmount = await prisma.transaction.aggregate({
         where: {
             userId: userId,

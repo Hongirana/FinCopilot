@@ -13,7 +13,7 @@ const createAccount = async (userId, accountData) => {
                     name: accountData.name,
                     type: accountData.type,
                     balance: accountData.balance || 0,
-                    currency: accountData.currency || 'USD'
+                    currency: accountData.currency || 'INR'
                 }
             }));
     })
@@ -25,22 +25,24 @@ const getAccountsByUserId = async (userId) => {
         if (!userId) {
             return reject(new Error('User id is required for account creation'));
         }
-
-        resolve(await accountnModel.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } }));
+        const accounts = await accountnModel.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } });
+        const totalBalance = accounts.reduce((sum, acc) => sum + Number(acc.balance), 0);
+        const totalAccounts = accounts.length;
+        resolve({ totalAccounts, totalBalance, accounts });
     })
 }
 
-const getAccountById = async (userId, accountId) => {
+const getAccountById = async (accountId, userId) => {
     return new Promise(async (resolve, reject) => {
         if (!userId || !accountId) {
             return reject(new Error('User id and Account Id  is required for account creation'));
         }
-
-        resolve(await accountnModel.findUnique({ where: { id: accountId, userId } }));
+        const account = await accountnModel.findFirst({ where: { id: accountId, userId } });
+        resolve(account);
     })
 }
 
-const updateAccount = async (userId, accountId, accountData) => {
+const updateAccount = async (accountId, userId, accountData) => {
     return new Promise(async (resolve, reject) => {
         if (!userId || !accountId) {
             return reject(new Error('User id and Account Id  is required for account creation'));
@@ -49,12 +51,17 @@ const updateAccount = async (userId, accountId, accountData) => {
     })
 }
 
-const deleteAccount = async (userId) => {
+const deleteAccount = async (accountId , userId) => {
     return new Promise(async (resolve, reject) => {
         if (!userId || !accountId) {
             return reject(new Error('User id and Account Id  is required for account creation'));
         }
-        resolve(await accountnModel.deleteMany({ where: { id: accountId, userId } }));
+        const accountExist = await accountnModel.findFirst({ where: { id: accountId, userId } });
+        if (!accountExist) {
+            resolve(false);
+        }
+        await accountnModel.deleteMany({ where: { id: accountId, userId } });
+        resolve(true);
     })
 }
 

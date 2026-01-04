@@ -19,8 +19,8 @@ model Budget {
 
 
 enum Period {
-  DAILY
-  WEEKLY
-  MONTHLY
-  YEARLY
+ MONTHLY 
+ WEEKLY 
+ YEARLY 
+ CUSTOM
 }

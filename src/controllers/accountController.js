@@ -1,13 +1,13 @@
 const accountModel = require('../models/accountModel');
 const { successResponse, errorResponse } = require('../utils/responseHelper');
 const { asyncHandler } = require('../middleware/errorHandler');
-const { NotFoundError, ValidationError, BadRequestError } = require('../utils/customErrors');
+const { NotFoundError, ValidationError,  } = require('../utils/customErrors');
 
 const listAccounts = asyncHandler(async (req, res, next) => {
     const userId = req.user.id;
     const accounts = await accountModel.getAccountsByUserId(userId);
   
-    return successResponse(res, 200, 'Accounts fetched successfully', { accounts });
+    return successResponse(res, 200, 'Accounts fetched successfully', accounts);
 })
 
 const createAccount = asyncHandler(async (req, res, next) => {
@@ -17,18 +17,18 @@ const createAccount = asyncHandler(async (req, res, next) => {
 
     // Validate required fields
     if (!name || !type) {
-        throw new BadRequestError('Missing required fields');
+        throw new ValidationError('Missing required fields');
     }
 
     // Validate account type
-    const validTypes = ['CHECKING', 'SAVINGS', 'CREDIT_CARD', 'INVESTMENT', 'CASH'];
+    const validTypes = ['checking', 'savings', 'credit_card', 'investment', 'cash'];
     if (!validTypes.includes(type)) {
-        throw new BadRequestError('Invalid account type');
+        throw new ValidationError('Invalid account type');
     }
 
     // Validate balance
     if (balance !== undefined && (typeof balance !== 'number' || balance < 0)) {
-        throw new BadRequestError('Invalid balance');
+        throw new ValidationError('Invalid balance');
     }
 
     // Create account
@@ -36,7 +36,7 @@ const createAccount = asyncHandler(async (req, res, next) => {
         name,
         type,
         balance: balance || 0,
-        currency: currency || 'USD'
+        currency: currency || 'INR'
     });
 
     //sendSuccess(res, 201, 'Account created successfully', { account });
@@ -47,12 +47,13 @@ const createAccount = asyncHandler(async (req, res, next) => {
 const getAccount = asyncHandler(async (req, res, next) => {
     const userId = req.user.id;
     const { id } = req.params;
+    console.log(userId, id);
     const account = await accountModel.getAccountById(id, userId);
     if (!account) {
         throw new NotFoundError('Account not found or does not belong to you');
     }
     // sendSuccess(res, 200, 'Account fetched successfully', { account });
-    return successResponse(res, 200, 'Account fetched successfully', { account });
+    return successResponse(res, 200, 'Account fetched successfully', { account} );
 })
 
 
@@ -60,7 +61,7 @@ const updateAccount = asyncHandler(async (req, res, next) => {
 
     const userId = req.user.id;
     const { id } = req.params;
-    const { name, type, currency } = req.body;
+    const updateData = req.body;
 
     // Verify account exists and belongs to user
     const account = await accountModel.getAccountById(id, userId);
@@ -68,20 +69,14 @@ const updateAccount = asyncHandler(async (req, res, next) => {
         throw new NotFoundError('Account not found or does not belong to you');
     }
 
-    // Build update data
-    const updateData = {};
-    if (name !== undefined) updateData.name = name;
-    if (type !== undefined) updateData.type = type;
-    if (currency !== undefined) updateData.currency = currency;
-
     // Update account
     await accountModel.updateAccount(id, userId, updateData);
 
     // Fetch updated account
     const updatedAccount = await accountModel.getAccountById(id, userId);
-
+    console.log(updatedAccount);
     //sendSuccess(res, 200, 'Account updated successfully', { account: updatedAccount });
-    return successResponse(res, 200, 'Account updated successfully', { account: updatedAccount });
+    return successResponse(res, 200, 'Account updated successfully', { account : updatedAccount });
 })
 
 /**

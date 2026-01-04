@@ -45,6 +45,8 @@ enum AccountType {
   checking
   savings
   credit_card
+  investment
+  cash
 }
 
 enum Category {

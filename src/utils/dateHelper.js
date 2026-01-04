@@ -35,16 +35,6 @@ const validateDateRange = async (startDate, endDate) => {
     return { isValid: true };
 }
 
-
-module.exports = {
-    getMonthRange,
-    getYearRange,
-    getMonthName,
-    getDaysInMonth,
-    validateDateRange,
-    validateDatetype
-}
-
 const validateDatetype = (date) => {  
     if (date instanceof Date) {
         return !isNaN(date.getTime());  
@@ -56,3 +46,13 @@ const validateDatetype = (date) => {
 
     return false;  
 };
+
+module.exports = {
+    getMonthRange,
+    getYearRange,
+    getMonthName,
+    getDaysInMonth,
+    validateDateRange,
+    validateDatetype
+}
+
