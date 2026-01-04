@@ -9,7 +9,8 @@ const createGoals = asyncHandler(async (req, res) => {
 
     const { title, description, targetAmount, deadline, category, priority } = req.body;
     console.log("Creating Goal");
-    const validatedData = await validateValues(title, targetAmount, deadline, category);
+    const validatedData = await validateValuesforCreate(title, targetAmount, deadline, category);
+    console.log(validatedData);
     if (validatedData.status === false && validatedData.message) {
         throw new ValidationError(validatedData.message);
     }
@@ -160,11 +161,21 @@ const updateGoalDetails = asyncHandler(async (req, res) => {
     const goalId = req.params.id;
     const { title, description, targetAmount, deadline, category, priority } = req.body;
 
-    const validatedValues = await validateValues(title, targetAmount, deadline, category);
+    const validatedValues = await validateValuesforUpdate(title, targetAmount, deadline, category);
     if (validatedValues.status === false && validatedValues.message) {
         throw new ValidationError(validatedValues.message);
     }
 
+    const goalExists = await prisma.goal.findFirst({
+        where: {
+            id: goalId,
+            userId: userId
+        }
+    });
+    console.log('Goal Exists', goalExists);
+    if (!goalExists) {
+        throw new NotFoundError('Goal not found');
+    }
     const updateData = {
         data: {
             ...(title && String(title).length > 0 && { title }),
@@ -208,7 +219,7 @@ module.exports = {
 
 //Helper Functions 
 
-function validateValues(title, targetAmount, deadline, category) {
+function validateValuesforCreate(title, targetAmount, deadline, category) {
     if (!title) {
         return { status: false, message: 'Title is required' };
     }
@@ -222,7 +233,11 @@ function validateValues(title, targetAmount, deadline, category) {
     }
 
     const deadlineDate = new Date(deadline);
-    if (deadlineDate <= new Date()) {
+    const today = new Date();
+    deadlineDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    if (deadlineDate < today) {
         return { status: false, message: 'Deadline must be in the future' };
     }
 
@@ -233,6 +248,38 @@ function validateValues(title, targetAmount, deadline, category) {
     return { status: true, message: null };
 }
 
+function validateValuesforUpdate(title, targetAmount, deadline, category) {
+
+    if (title !== undefined && (!title || !title.trim())) {
+        return { status: false, message: 'Title cannot be empty' };
+    }
+
+    // TargetAmount validation
+    if (targetAmount !== undefined && (!targetAmount || Number(targetAmount) <= 0)) {
+        return { status: false, message: 'Target amount must be greater than 0' };
+    }
+
+    // Deadline validation
+    if (deadline !== undefined) {
+        if (!deadline) {
+            return { status: false, message: 'Deadline is required' };
+        }
+        const deadlineDate = new Date(deadline);
+        const today = new Date();
+        deadlineDate.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+
+        if (deadlineDate < today) {
+            return { status: false, message: 'Deadline cannot be in the past' };
+        }
+    }
+    // Category validation
+    if (category !== undefined && (!category || !category.trim())) {
+        return { status: false, message: 'Category cannot be empty' };
+    }
+
+    return { status: true, message: null };
+}
 
 function addAddtionalDtls(goalsData) {
     return new Promise((resolve, reject) => {

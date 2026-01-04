@@ -1,58 +1,68 @@
 require('dotenv').config();
 const prisma = require('../prismaClient');
 const authUtils = require('../utils/authUtils');
-const {successResponse, errorResponse} = require('../utils/responseHelper');
+const { successResponse, errorResponse } = require('../utils/responseHelper');
 const { asyncHandler } = require('../middleware/errorHandler');
-const { NotFoundError, ValidationError, BadRequestError } = require('../utils/customErrors');
+const { NotFoundError, ValidationError, } = require('../utils/customErrors');
 
-exports.login =asyncHandler( async (req, res) => {
-    
-        console.log("Inside Login Form");
-        const { email, password } = req.body;
-        if (!email || !password) 
-            { throw new BadRequestError('Email and password are required'); }
+exports.login = asyncHandler(async (req, res) => {
 
-        const userData = await prisma.user.findUnique({ where: { email } });
-        if (!userData) {
-            throw new NotFoundError('User not found');
-        }
+    console.log("Inside Login Form");
+    const { email, password } = req.body;
+    if (!email || !password) { throw new ValidationError('Email and password are required'); }
+    console.log(email, password);
+    const userData = await prisma.user.findUnique({ where: { email } });
+    if (!userData) {
+        throw new NotFoundError('User not found');
+    }
+    console.log("userData", userData);
+    const comparePassword = await authUtils.verifyPassword(password, userData.password);
+    console.log("comparePassword", comparePassword);
+    if (!comparePassword) {
+        throw new ValidationError('Invalid password');
+    }
 
-        const comparePassword = await authUtils.verifyPassword(password, userData.password);
-        if (!comparePassword) {
-            throw new ValidationError('Invalid password');
-        }
-
-        const payload = {
-            email: userData.email,
-            id: userData.id,
-            name: userData.name
-        }
-        const jwtToken = await authUtils.generateToken(payload);
-        return successResponse(res, 200, 'Login successful', { token: jwtToken });
+    const payload = {
+        email: userData.email,
+        id: userData.id,
+        name: userData.name
+    }
+    const jwtToken = await authUtils.generateToken(payload);
+    return successResponse(res, 200, 'Login successful', { token: jwtToken });
 })
 
-exports.signUp =asyncHandler( async (req, res) => {
-    
-        const { email, name, password } = req.body;
+exports.signUp = asyncHandler(async (req, res) => {
 
-        if (!email || !password) {
-            throw new BadRequestError('Email and password are required');
-        }
+    const { email, firstName, lastName, password } = req.body;
 
-        const existingUser = await prisma.user.findUnique({ where: { email } });
-        if (existingUser) {
-           throw new ValidationError('User already exists');
-        }
-        
-        const hashedPassword = await authUtils.hashPassword(password);
+    if (!email || !password) {
+        throw new ValidationError('Email and password are required');
+    }
 
-        const newUser = await prisma.user.create({
-            data: {
-                email,
-                name,
-                password: hashedPassword
-            }
-        });
-
-       return successResponse(res, 201, 'User created successfully', { user: newUser });
+    const existingUser = await prisma.user.findFirst({ where: { email: email } });
+    if (existingUser) {
+        throw new ValidationError('User already exists');
+    }
+    const userData = {
+        email,
+        firstName,
+        lastName,
+        password
+    }
+    const newUser = await prisma.user.create({
+        data: userData,
+        select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        baseCurrency: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true
+        // ✅ NO password field here!
+    }
+    });
+    console.log('newUser', newUser);
+    return successResponse(res, 201, 'User created successfully', { user: newUser });
 });

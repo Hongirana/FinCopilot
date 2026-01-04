@@ -20,6 +20,7 @@ async function authenticateMiddleware(req, res, next) {
 
   try {
    const decoded = await authUtils.verifyToken(token);
+   console.log(decoded);
       if (!decoded) {
         return errorResponse(res, 401, 'Unauthorized');
       }

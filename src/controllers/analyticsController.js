@@ -126,9 +126,9 @@ const getMonthlyReport =asyncHandler( async (req, res) => {
                 previousMonth: {
                     month: prevMonth,
                     year: prevYear,
-                    totalExpenses: prevExpenses.toFixed(2),
-                    change: change.toFixed(2),
-                    changeAmount: changeAmount.toFixed(2)
+                    totalExpenses: prevExpenses,
+                    change: change,
+                    changeAmount: changeAmount
                 }
             }
         });  

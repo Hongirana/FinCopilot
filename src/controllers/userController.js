@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const { successResponse, errorResponse } = require('../utils/responseHelper');
 const { asyncHandler } = require('../middleware/errorHandler');
-const { NotFoundError, ValidationError, BadRequestError } = require('../utils/customErrors');
+const { NotFoundError, ValidationError, ConflictError ,AuthenticationError} = require('../utils/customErrors');
 
 
 const getUsers = asyncHandler(async (req, res) => {
@@ -52,8 +52,8 @@ const createUser = asyncHandler(async (req, res) => {
   const { email, firstName, lastName, password } = req.body;
 
   // Check if user already exists
-  const existingUser = await prisma.user.findUnique({
-    where: { email }
+  const existingUser = await prisma.user.findFirst({
+    where: { email: email }
   });
 
   if (existingUser) {
@@ -158,41 +158,41 @@ const updateMyProfile = asyncHandler(async (req, res) => {
 const updatePassword = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const { currentPassword, newPassword } = req.body;
-  
+
   // Validate inputs
   if (!currentPassword || !newPassword) {
-    throw new BadRequestError('Current password and new password are required');
+    throw new ValidationError('Current password and new password are required');
   }
-  
+
   if (newPassword.length < 8) {
     throw new ValidationError('New password must be at least 8 characters long');
   }
-  
+
   // Get user with password
   const user = await prisma.user.findUnique({
     where: { id: userId }
   });
-  
+
   if (!user) {
     throw new NotFoundError('User not found');
   }
-  
+
   // Verify current password
   const isValidPassword = await bcrypt.compare(currentPassword, user.password);
-  
+
   if (!isValidPassword) {
     throw new AuthenticationError('Current password is incorrect');
   }
-  
+
   // Hash new password
   const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
-  
+
   // Update password
   await prisma.user.update({
     where: { id: userId },
     data: { password: newPasswordHash }
   });
-  
+
   return successResponse(res, 200, 'Password updated successfully');
 });
 
@@ -203,33 +203,33 @@ const updatePassword = asyncHandler(async (req, res) => {
 const deleteMyAccount = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const { password } = req.body;
-  
+
   // Require password confirmation
   if (!password) {
-    throw new BadRequestError('Password confirmation required to delete account');
+    throw new ValidationError('Password confirmation required to delete account');
   }
-  
+
   // Get user
   const user = await prisma.user.findUnique({
     where: { id: userId }
   });
-  
+
   if (!user) {
     throw new NotFoundError('User not found');
   }
-  
+
   // Verify password
   const isValidPassword = await bcrypt.compare(password, user.password);
-  
+
   if (!isValidPassword) {
     throw new AuthenticationError('Invalid password');
   }
-  
+
   // Delete user (this will cascade delete related data based on your Prisma schema)
   await prisma.user.delete({
     where: { id: userId }
   });
-  
+
   return successResponse(res, 200, 'Account deleted successfully');
 });
 
@@ -239,7 +239,7 @@ const deleteMyAccount = asyncHandler(async (req, res) => {
  */
 const getMyStats = asyncHandler(async (req, res) => {
   const userId = req.user.id;
-  
+
   // Get counts
   const [transactionCount, budgetCount, goalCount, accountCount] = await Promise.all([
     prisma.transaction.count({ where: { userId } }),
@@ -247,7 +247,7 @@ const getMyStats = asyncHandler(async (req, res) => {
     prisma.goal.count({ where: { userId } }),
     prisma.account.count({ where: { userId } })
   ]);
-  
+
   // Get user info
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -259,7 +259,7 @@ const getMyStats = asyncHandler(async (req, res) => {
       createdAt: true
     }
   });
-  
+
   return successResponse(res, 200, 'User statistics retrieved successfully', {
     user,
     stats: {

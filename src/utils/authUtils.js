@@ -1,32 +1,25 @@
-require('dotenv').config();
+// require('dotenv').config();
+require('dotenv').config( { path: '.env.test' } );
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { error } = require('node:console');
 const saltRounds = 10;
 
 
-function hashPassword(password) {
-     return new Promise((resolve, reject) => {
-        if (!password) {
-            return reject(new Error('Password is required for hashing'));
-        }
-        resolve(bcrypt.hash(password, saltRounds));
-    });
+async function hashPassword(password) {
+    if (!password) {
+        throw new Error('Password is required for hashing');
+    }
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    return hashedPassword;
 }
 
-function verifyPassword(password, hashedPassword) {
-
-    return new Promise((resolve, reject) => {
+async function verifyPassword(password, hashedPassword) {
+    return new Promise(async (resolve, reject) => {
         if (!password || !hashedPassword) {
             return reject(new Error('Password and hashed password are required for verification'));
         }
-        bcrypt.compare(password, hashedPassword, (err, result) => {
-            if (err) {
-                return reject(err);
-            }
-            resolve(result);
-            
-        });
+        const comparePassword = await bcrypt.compare(password, hashedPassword);
+        resolve(comparePassword);
     });
 }
 
@@ -40,8 +33,9 @@ function generateToken(payload) {
 }
 
 function verifyToken(token) {
+    console.log('token', token);
     return new Promise((resolve, reject) => {
-        jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
+        jwt.verify(token, process.env.JWT_SECRET_KEY || 'test-secret-key-fincopilot-2026' , (err, decoded) => {
             if (err) {
                 resolve(false);
             }
@@ -53,19 +47,19 @@ function verifyToken(token) {
 function validatePaswordStrength(password) {
     // Example: Minimum 8 characters, at least one uppercase letter, one lowercase letter, one number and one special character
     const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}$/;
-    
-    passwordRegex.test(password , (error, result) => {
+
+    passwordRegex.test(password, (error, result) => {
         if (error) {
-            return {isValid : false , error : error};
+            return { isValid: false, error: error };
         }
-        return {isValid : result , error : null};
+        return { isValid: result, error: null };
     });
 }
 
 module.exports = {
     hashPassword,
     verifyPassword,
-    generateToken,  
+    generateToken,
     verifyToken,
     validatePaswordStrength
 };  

@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { first } = require('lodash');
 
 /**
  * Sample test users
@@ -7,13 +8,15 @@ const jwt = require('jsonwebtoken');
 const testUser = {
   email: 'test@fincopilot.com',
   password: 'Test123!@#',
-  name: 'Test User'
+  firstName: 'Test User',
+  lastName: 'One'
 };
 
 const testUser2 = {
   email: 'test2@fincopilot.com',
   password: 'Test456!@#',
-  name: 'Test User 2'
+  firstName: 'Test User 2',
+  lastName: 'Two'
 };
 
 /**
@@ -101,12 +104,13 @@ const testAccount2 = {
 async function createTestUser(prisma, userData = testUser) {
   // Bcrypt 6.x syntax (same as 5.x)
   const hashedPassword = await bcrypt.hash(userData.password, 10);
-  
+
   return await prisma.user.create({
     data: {
       email: userData.email,
       password: hashedPassword,
-      name: userData.name
+      firstName: userData.firstName || "Test",      // ✅ New field
+      lastName: userData.lastName || "User"
     }
   });
 }
@@ -118,8 +122,8 @@ async function createTestUser(prisma, userData = testUser) {
  */
 function generateTestToken(userId) {
   return jwt.sign(
-    { id: userId }, 
-    process.env.JWT_SECRET || 'test-secret-key-fincopilot',
+    { id: userId },
+    process.env.JWT_SECRET_KEY || 'test-secret-key-fincopilot',
     { expiresIn: '1h' }
   );
 }
@@ -202,7 +206,7 @@ module.exports = {
   testGoal2,
   testAccount,
   testAccount2,
-  
+
   // Helper functions
   createTestUser,
   generateTestToken,
