@@ -1,0 +1,21 @@
+model CategoryFeedback {
+    id     String @id @default(cuid())
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    transactionId String
+    transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+    suggestedCategory String // What AI suggested
+    actualCategory    String // What user corrected to
+    confidence        Float  @default(0) // AI's confidence (0-1)
+
+    isCorrect Boolean  @default(false) // true if AI was right
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([userId])
+    @@index([transactionId])
+    @@index([suggestedCategory])
+    @@index([actualCategory])
+}

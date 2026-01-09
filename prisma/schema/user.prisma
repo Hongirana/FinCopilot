@@ -1,6 +1,6 @@
 model User {
   id            String   @id @default(uuid())
-  firstName     String   
+  firstName     String
   lastName      String
   email         String   @unique
   password      String
@@ -13,10 +13,11 @@ model User {
   updatedAt     DateTime @updatedAt
 
   // Relations
-  accounts     Account[]
-  transactions Transaction[]
-  budgets      Budget[]
-  goals        Goal[]
+  accounts          Account[]
+  transactions      Transaction[]
+  budgets           Budget[]
+  goals             Goal[]
+  categoryFeedbacks CategoryFeedback[]
 }
 
 enum Role {

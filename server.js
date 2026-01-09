@@ -12,6 +12,7 @@ const budgetRoutes = require('./src/routes/budgetRoutes');
 const goalRoutes = require('./src/routes/goalsRoutes');
 const analyticsRoutes = require('./src/routes/analyticsRoutes');
 const dashboardRoutes = require('./src/routes/dashboardRoutes');
+const aiRoutes = require('./src/routes/aiRoutes');
 
 
 //Importing Middleware
@@ -38,6 +39,7 @@ app.use('/api/budgets', budgetRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/ai', aiRoutes);
 
 //Api routes for Middleware testing
 
