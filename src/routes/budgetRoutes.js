@@ -12,5 +12,7 @@ router.get('/', authMiddleware, budgetController.listUserBudgets);
 router.get('/:id', authMiddleware, budgetController.getBudgetById);
 router.put('/:id', authMiddleware, ...budgetValidators.update, handleValidationErrors, budgetController.updateBudget);
 router.delete('/:id', authMiddleware, budgetController.deleteBudget);
+router.post('/recalculate', authMiddleware, budgetController.recalculateBudgets);
+
 
 module.exports = router;

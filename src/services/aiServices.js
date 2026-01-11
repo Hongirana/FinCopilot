@@ -1,5 +1,6 @@
 const { GoogleGenAI } = require('@google/genai');
-
+require('dotenv').config();
+const { getCategoryList, isValidCategory, getCategoryAIInstructions } = require('../constant/categories');
 
 class AIService {
     constructor() {
@@ -21,6 +22,8 @@ class AIService {
         try {
             const { description, amount, merchant, type } = transaction;
 
+            const categoryInstructions = getCategoryAIInstructions();
+
             const prompt = `You are a financial transaction categorizer for Indian users.
 
 Transaction Details:
@@ -29,7 +32,7 @@ Transaction Details:
 - Merchant: "${merchant || 'Unknown'}"
 - Type: ${type || 'expense'}
 
-Available categories: groceries, utilities, transport, entertainment, healthcare, shopping, dining, salary, investment, bills, fuel, subscription, other
+${categoryInstructions}
 
 Return ONLY valid JSON (no markdown, no code blocks):
 {
@@ -121,12 +124,13 @@ Rules:
       * @private
       */
     validateCategory(category) {
-        const validCategories = [
-            'groceries', 'utilities', 'transport', 'entertainment',
-            'healthcare', 'shopping', 'dining', 'salary', 'investment',
-            'bills', 'fuel', 'subscription', 'other'
-        ];
-        return validCategories.includes(category) ? category : 'other';
+        const lowerCategory = String(category).toLowerCase();
+        if (isValidCategory(lowerCategory)) {
+            return lowerCategory;
+        }
+
+        console.warn(`[AIService] Invalid category "${category}", using "other"`);
+        return 'other';
     }
 
     /**

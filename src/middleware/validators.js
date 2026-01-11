@@ -106,7 +106,7 @@ const accountValidators = {
 
     body('type')
       .optional()
-      .isIn(['CHECKING', 'SAVINGS', 'CREDIT_CARD', 'INVESTMENT', 'CASH'])
+      .isIn(['checking', 'savings', 'credit_card', 'investment', 'cash'])
       .withMessage('Invalid account type'),
 
     body('currency')
@@ -140,63 +140,62 @@ const accountValidators = {
  */
 const transactionValidators = {
   create: [
-    body('accountId')
-      .notEmpty()
-      .withMessage('Account ID is required')
-      .isUUID()
-      .withMessage('Invalid account ID format'),
+  body('accountId')
+    .notEmpty()
+    .withMessage('Account ID is required')
+    .isUUID()
+    .withMessage('Invalid account ID format'),
 
-    body('amount')
-      .notEmpty()
-      .withMessage('Amount is required')
-      .isFloat({ min: 0.01 })
-      .withMessage('Amount must be a positive number greater than 0')
-      .toFloat(),
+  body('amount')
+    .notEmpty()
+    .withMessage('Amount is required')
+    .isFloat({ min: 0.01 })
+    .withMessage('Amount must be a positive number greater than 0')
+    .toFloat(),
 
-    body('type')
-      .notEmpty()
-      .withMessage('Transaction type is required')
-      .isIn(['debit', 'credit'])
-      .withMessage('Type must be either income or expense'),
+  body('type')
+    .notEmpty()
+    .withMessage('Transaction type is required')
+    .isIn(['debit', 'credit'])
+    .withMessage('Type must be either debit or credit'),
 
-    body('category')
-      .notEmpty()
-      .withMessage('Category is required')
-      .isString()
-      .trim()
-      .isLength({ min: 2, max: 50 })
-      .withMessage('Category must be between 2 and 50 characters'),
+  body('category')
+    .optional()  // ✅ CHANGED: Make category optional for AI auto-categorization
+    .isString()
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Category must be between 2 and 50 characters'),
 
-    body('merchant')
-      .optional()
-      .isString()
-      .trim()
-      .isLength({ max: 100 })
-      .withMessage('Merchant name too long (max 100 characters)'),
+  body('merchant')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('Merchant name too long (max 100 characters)'),
 
-    body('description')
-      .optional()
-      .isString()
-      .trim()
-      .isLength({ max: 500 })
-      .withMessage('Description too long (max 500 characters)'),
+  body('description')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Description too long (max 500 characters)'),
 
-    body('date')
-      .optional()
-      .isISO8601()
-      .withMessage('Invalid date format. Use ISO 8601 format (YYYY-MM-DD)')
-      .custom((value) => {
-        const inputDate = new Date(value);
-        const today = new Date();
-        today.setHours(23, 59, 59, 999);
+  body('date')
+    .optional()
+    .isISO8601()
+    .withMessage('Invalid date format. Use ISO 8601 format (YYYY-MM-DD)')
+    .custom((value) => {
+      const inputDate = new Date(value);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
 
-        if (inputDate > today) {
-          throw new Error('Transaction date cannot be in the future');
-        }
-        return true;
-      })
-      .toDate()
-  ],
+      if (inputDate > today) {
+        throw new Error('Transaction date cannot be in the future');
+      }
+      return true;
+    })
+    .toDate()
+],
 
   update: [
     param('id')
@@ -211,7 +210,7 @@ const transactionValidators = {
 
     body('type')
       .optional()
-      .isIn(['income', 'expense'])
+      .isIn(['credit', 'debit'])
       .withMessage('Type must be either income or expense'),
 
     body('category')
@@ -299,7 +298,7 @@ const transactionValidators = {
 
     query('type')
       .optional()
-      .isIn(['income', 'expense'])
+      .isIn(['credit', 'debit'])
       .withMessage('Type must be income or expense'),
 
     query('search')

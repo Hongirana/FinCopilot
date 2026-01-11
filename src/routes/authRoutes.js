@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const { authValidators, handleValidationErrors } = require('../middleware/validators');
-const { loginLimiter, signupLimiter } = require('../middleware/rateLimiter');
+const { strictRateLimiter } = require('../middleware/rateLimitMiddleware');
 
-router.post('/login', loginLimiter, authController.login, handleValidationErrors, authValidators.login);
-router.post('/signUp', signupLimiter, authController.signUp, handleValidationErrors, authValidators.signup);
+router.post('/login', strictRateLimiter, authController.login, handleValidationErrors, authValidators.login);
+router.post('/signUp', strictRateLimiter, authController.signUp, handleValidationErrors, authValidators.signup);
 
 
 /* GET /api/auth/me

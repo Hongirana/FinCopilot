@@ -4,12 +4,13 @@ const authMiddleware = require('../middleware/authMiddleware');
 const aiService = require('../services/aiServices');
 const aiFeedbackService = require('../services/aiFeedbackServices');
 const prisma = require('../prismaClient');
+const { aiOperationRateLimiter } = require('../middleware/rateLimitMiddleware');
 
 /**
  * POST /api/ai/categorize
  * Categorize a single transaction
  */
-router.post('/categorize', authMiddleware, async (req, res) => {
+router.post('/categorize', authMiddleware, aiOperationRateLimiter, async (req, res) => {
   try {
     const { description, amount, merchant, type } = req.body;
 
@@ -50,7 +51,7 @@ router.post('/categorize/bulk', authMiddleware, async (req, res) => {
     const transactions = await prisma.transaction.findMany({
       where: {
         userId: userId,
-        category: null // Only uncategorized
+        category: 'other' // Only uncategorized
       },
       take: 10, // Limit to 10 at a time to avoid rate limits
       orderBy: {
@@ -129,7 +130,7 @@ router.patch('/apply-category/:transactionId', authMiddleware, async (req, res) 
  * PATCH /api/ai/feedback/:transactionId
  * Record user feedback on AI categorization
  */
-router.patch('/feedback/:transactionId', authMiddleware, async (req, res) => {
+router.patch('/feedback/:transactionId', authMiddleware, aiOperationRateLimiter, async (req, res) => {
   try {
     const userId = req.user.id;
     const { transactionId } = req.params;
@@ -194,7 +195,7 @@ router.get('/accuracy', authMiddleware, async (req, res) => {
  * GET /api/ai/feedback-history
  * Get user's feedback history
  */
-router.get('/feedback-history', authMiddleware, async (req, res) => {
+router.get('/feedback-history', authMiddleware, aiOperationRateLimiter, async (req, res) => {
   try {
     const userId = req.user.id;
     const limit = parseInt(req.query.limit) || 20;

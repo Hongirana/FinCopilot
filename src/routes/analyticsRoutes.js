@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const analyticsController = require('../controllers/analyticsController');
 const authMiddleware = require('../middleware/authMiddleware');
+const { cacheAnalyticsMiddleware } = require('../middleware/cacheMiddleware');
+const { lenientRateLimiter } = require('../middleware/rateLimitMiddleware');
 
 // Apply authentication middleware to all routes
 router.use(authMiddleware);
@@ -11,7 +13,7 @@ router.use(authMiddleware);
 // 1. Spending by Category
 // GET /api/analytics/spending/category
 // Optional query params: startDate, endDate, accountId
-router.get('/spending/category', analyticsController.getSpendsByCategory);
+router.get('/spending/category', lenientRateLimiter, cacheAnalyticsMiddleware(300), analyticsController.getSpendsByCategory);
 
 // 2. Monthly Report
 // GET /api/analytics/spending/monthly?month=12&year=2025
@@ -35,7 +37,7 @@ router.get('/spending/range', analyticsController.getDateRangeReport);
 // GET /api/analytics/trends?period=month&compare=3
 // Required query param: period (week/month/year)
 // Optional: compare (default: 3)
-router.get('/trends', analyticsController.getSpendingTrends);
+router.get('/trends', lenientRateLimiter, analyticsController.getSpendingTrends);
 
 // 6. Top Spending Categories
 // GET /api/analytics/top-categories?limit=5

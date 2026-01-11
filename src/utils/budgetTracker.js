@@ -40,7 +40,7 @@ const updateBudgetSpent = async (userId, category, transactionDate) => {
         });
 
          const totalSpent = transactions.reduce((sum, txn) => {
-            return sum + Number(txn.amount);
+            return sum + Math.abs(Number(txn.amount));
         }, 0);
 
         //Update budget.spent in database
@@ -61,9 +61,6 @@ const updateBudgetSpent = async (userId, category, transactionDate) => {
         }
 
         return updatedBudget;
-
-
-
 
     } catch (err) {
         console.error(err);

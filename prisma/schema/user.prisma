@@ -18,6 +18,8 @@ model User {
   budgets           Budget[]
   goals             Goal[]
   categoryFeedbacks CategoryFeedback[]
+  savedFilters      SavedFilter[]
+  scheduledReports   ScheduledReport[]
 }
 
 enum Role {

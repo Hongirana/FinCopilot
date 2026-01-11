@@ -2,11 +2,12 @@ const prisma = require('../prismaClient');
 const { successResponse, errorResponse } = require('../utils/responseHelper');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { NotFoundError, ValidationError, BadRequestError } = require('../utils/customErrors');
-
+const { deleteCache } = require('../services/cacheService');
 //Create Goals 
 
 const createGoals = asyncHandler(async (req, res) => {
 
+    const userId = req.user.id;
     const { title, description, targetAmount, deadline, category, priority } = req.body;
     console.log("Creating Goal");
     const validatedData = await validateValuesforCreate(title, targetAmount, deadline, category);
@@ -28,6 +29,8 @@ const createGoals = asyncHandler(async (req, res) => {
 
     const goal = await prisma.goal.create({ data });
     console.log("Goal created successfully");
+    await deleteCache(`goals:${userId}`);
+    await deleteCache(`dashboard:${userId}`);
     return successResponse(res, 201, 'Goal Created Successfully', goal);
 
 });
@@ -103,7 +106,8 @@ const deleteGoalById = asyncHandler(async (req, res) => {
             id: goalId
         }
     });
-
+    await deleteCache(`goals:${userId}`);
+    await deleteCache(`dashboard:${userId}`)
     return successResponse(res, 200, 'Goal Deleted Successfully');
 
 })
@@ -147,7 +151,8 @@ const updateGoalProgress = asyncHandler(async (req, res) => {
     }
 
     const updateGoal = await prisma.goal.update(updateData);
-
+    await deleteCache(`goals:${userId}`);
+    await deleteCache(`dashboard:${userId}`)
     const message = updateData.data.status === 'COMPLETED'
         ? 'Congratulations! Goal achieved! 🎉'
         : 'Progress Updated Successfully';
@@ -194,6 +199,8 @@ const updateGoalDetails = asyncHandler(async (req, res) => {
             userId: userId
         }
     })
+    await deleteCache(`goals:${userId}`);
+    await deleteCache(`dashboard:${userId}`)
     return successResponse(res, 200, 'Goal Updated Successfully', updateGoal);
 })
 

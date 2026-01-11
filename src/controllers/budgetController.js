@@ -5,7 +5,7 @@ const budgetPeriod = ['daily', 'weekly', 'monthly', 'yearly'];
 
 const { asyncHandler } = require('../middleware/errorHandler');
 const { NotFoundError, ValidationError, BadRequestError, ConflictError } = require('../utils/customErrors');
-
+const { invalidateBudgetCache } = require('../services/cacheService');
 // **Features to Build:**
 // 1. **Create Budget**: Set spending limits per category
 // 2. **List Budgets**: Get all budgets for user (with filters)
@@ -47,7 +47,7 @@ const createBudget = asyncHandler(async (req, res) => {
         }
     });
     console.log(budget);
-
+    await invalidateBudgetCache(userId);
     return successResponse(res, 201, 'Budget created successfully', { budget });
 
 })
@@ -122,6 +122,8 @@ const updateBudget = asyncHandler(async (req, res) => {
     }
 
     const updateBudget = await prisma.budget.update({ where: { id: budgetId }, data: updateData });
+
+    await invalidateBudgetCache(userId);
     return successResponse(res, 200, 'Budget updated successfully', { budget: updateBudget });
 })
 
@@ -134,6 +136,8 @@ const deleteBudget = asyncHandler(async (req, res) => {
     if (!budgetData) throw new NotFoundError('Budget not found');
 
     await prisma.budget.delete({ where: { id: budgetId } });
+
+    await invalidateBudgetCache(userId);
     return successResponse(res, 200, 'Budget deleted successfully');
 })
 

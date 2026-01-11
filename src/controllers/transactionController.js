@@ -1,12 +1,12 @@
 const prisma = require('../prismaClient');
-const categorizeTransaction = require('../utils/categorizer');
 const { updateBudgetSpent } = require('../utils/budgetTracker');
 const { successResponse, errorResponse } = require('../utils/responseHelper');
 const { buildTransactionFilters } = require('../utils/queryBuilder');
 
 const { asyncHandler } = require('../middleware/errorHandler');
 const { NotFoundError, ValidationError, BadRequestError } = require('../utils/customErrors');
-const { user } = require('../middleware/userMiddleware');
+const { invalidateTransactionCache } = require('../services/cacheService');
+const aiService = require('../services/aiServices');
 
 const listTransactions = asyncHandler(async (req, res) => {
 
@@ -79,67 +79,105 @@ const listTransactions = asyncHandler(async (req, res) => {
 const createTransaction = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   let { amount, type, category, merchant, description, date, accountId } = req.body;
-
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  // Validate amount
   const numericAmount = Number(amount);
-  if (!Number.isFinite(numericAmount) || numericAmount < 0) {
-    throw new ValidationError('Amount must be a non-negative number');
+  if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+    throw new ValidationError('Amount must be a positive number');
   }
 
-
+  // Validate and parse date
   let txDate = date ? new Date(date) : new Date();
   if (Number.isNaN(txDate.getTime())) {
     throw new ValidationError('Invalid date');
   }
-  if (txDate > new Date()) {
+  if (txDate > today) {
     throw new ValidationError('Date cannot be in the future');
   }
 
-  if (!category) {
-    category = await categorizeTransaction(merchant || null, description || null);
-  }
+  // Verify account belongs to user
+  const account = await prisma.account.findFirst({
+    where: { id: accountId, userId }
+  });
 
-  if (date && new Date() < date) {
-    throw new ValidationError('Date cannot be in the future');
-  }
-
-  //Verifying account of User.
-  const account = await prisma.account.findFirst({ where: { id: accountId, userId } });
   if (!account) {
     throw new NotFoundError('Account not found or does not belong to you');
   }
 
-  const created = await prisma.transaction.create({
-    data: {
-      amount,
-      type,
-      category,
-      merchant,
-      description,
-      date: txDate || new Date(),
-      accountId,
-      userId: req.user.id
+  // ✅ NEW: AI Auto-Categorization if category not provided
+  if (!category) {
+    console.log('[Transaction] No category provided, using AI categorization...');
+    const aiResult = await aiService.categorizeTransaction({
+      description: description || '',
+      amount: numericAmount,
+      merchant: merchant || '',
+      type: type
+    });
+
+    if (aiResult.success) {
+      category = aiResult.data.category;
+      console.log(`[Transaction] AI categorized as: ${category} (confidence: ${aiResult.data.confidence})`);
+    } else {
+      category = 'other';
+      console.log('[Transaction] AI categorization failed, using default: other');
     }
+  }
+
+  // ✅ NEW: Calculate balance change
+  const balanceChange = type === 'credit' ? numericAmount : -numericAmount;
+
+  // Start transaction for atomicity
+  const result = await prisma.$transaction(async (tx) => {
+    // Create transaction record
+    const created = await tx.transaction.create({
+      data: {
+        amount: numericAmount,
+        type,
+        category,
+        merchant,
+        description,
+        date: txDate,
+        accountId,
+        userId
+      }
+    });
+
+    // ✅ NEW: Update account balance
+    await tx.account.update({
+      where: { id: accountId },
+      data: {
+        balance: {
+          increment: balanceChange
+        }
+      }
+    });
+
+    return created;
   });
 
-  // ✅ ADD THIS: Update budget if expense transaction
-  if (created.type === 'debit' && created.category) {
+  // Invalidate cache after successful creation
+  await invalidateTransactionCache(userId);
+
+  // Update budget if expense transaction
+  if (result.type === 'debit' && result.category) {
     try {
-      await updateBudgetSpent(req.user.id, created.category, created.txDate);
+      await updateBudgetSpent(userId, result.category, result.date);
     } catch (budgetError) {
-      // Log error but don't fail transaction creation
       console.error('Failed to update budget:', budgetError);
     }
   }
-  console.log("Transaction Created Successfully",created);
-  return successResponse(res, 201, 'Transaction created successfully', { transaction: created });
-});
 
+  console.log('Transaction Created Successfully:', result);
+  return successResponse(res, 201, 'Transaction created successfully', {
+    transaction: result
+  });
+});
 // [ ] Function: `getTransactionById(req, res)`.
 const getTransactionById = asyncHandler(async (req, res) => {
 
   const id = req.params.id;
   const userId = req.user.id;
-
   const transaction = await prisma.transaction.findFirst({ where: { id, userId } });
 
   if (!transaction) throw new NotFoundError('Transaction not found');
@@ -152,52 +190,83 @@ const getTransactionById = asyncHandler(async (req, res) => {
 const updateTransaction = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const id = req.params.id;
-  const {
-    amount,
-    type,
-    category,
-    merchant,
-    description,
-    date
-  } = req.body;
+  const { amount, type, category, merchant, description, date } = req.body;
 
-  //Checking transaction exists or not
-  const transaction = await prisma.transaction.findFirst({ where: { id: id, userId: userId } });
+  // Get existing transaction
+  const transaction = await prisma.transaction.findFirst({
+    where: { id, userId }
+  });
 
   if (!transaction) throw new NotFoundError('Transaction not found');
 
-
+  // Build update data
   const updateData = {
-    ...(amount !== undefined && { amount: Number(amount).toFixed(2) }),
+    ...(amount !== undefined && { amount: Number(amount) }),
     ...(type !== undefined && { type }),
     ...(category !== undefined && { category }),
     ...(merchant !== undefined && { merchant }),
     ...(description !== undefined && { description }),
     ...(date !== undefined && { date: new Date(date) }),
   };
-  console.log(updateData);
-  //Updating transaction
-  const updatedTransaction = await prisma.transaction.update({ where: { id , userId }, data: updateData });
 
-  // ✅ ADD THIS: Update budget if expense transaction
+  // ✅ NEW: Calculate balance adjustment if amount or type changed
+  let balanceAdjustment = 0;
+  const oldBalance = transaction.type === 'credit'
+    ? Number(transaction.amount)
+    : -Number(transaction.amount);
+
+  const newAmount = updateData.amount !== undefined ? updateData.amount : Number(transaction.amount);
+  const newType = updateData.type || transaction.type;
+
+  const newBalance = newType === 'credit' ? newAmount : -newAmount;
+  balanceAdjustment = newBalance - oldBalance;
+
+  // Update transaction and account balance atomically
+  const result = await prisma.$transaction(async (tx) => {
+    // Update transaction
+    const updatedTx = await tx.transaction.update({
+      where: { id },
+      data: updateData
+    });
+
+    // ✅ NEW: Update account balance if changed
+    if (balanceAdjustment !== 0) {
+      await tx.account.update({
+        where: { id: transaction.accountId },
+        data: {
+          balance: {
+            increment: balanceAdjustment
+          }
+        }
+      });
+    }
+
+    return updatedTx;
+  });
+
+  // Invalidate cache
+  await invalidateTransactionCache(userId);
+
+  // Update budgets for old and new categories
   if (transaction.type === 'debit' && transaction.category) {
-    updateBudgetSpent(req.user.id, transaction.category, transaction.date);
+    updateBudgetSpent(userId, transaction.category, transaction.date);
+  }
+  if (result.type === 'debit' && result.category) {
+    updateBudgetSpent(userId, result.category, result.date);
   }
 
-  if (updatedTransaction.type === 'debit' && updatedTransaction.category) {
-    updateBudgetSpent(req.user.id, updatedTransaction.category, updatedTransaction.date);
-  }
-  console.log("Transaction Updated Successfully",updatedTransaction);
-  return successResponse(res, 200, 'Transaction updated successfully', {transaction: updatedTransaction } );
-})
+  console.log('Transaction Updated Successfully:', result);
+  return successResponse(res, 200, 'Transaction updated successfully', {
+    transaction: result
+  });
+});
 
 
 const deleteTransaction = asyncHandler(async (req, res) => {
-
   const id = req.params.id;
   const userId = req.user.id;
 
-  // ✅ Get transaction details BEFORE deleting
+  // Get transaction details BEFORE deleting
   const transaction = await prisma.transaction.findFirst({
     where: { id, userId }
   });
@@ -206,12 +275,31 @@ const deleteTransaction = asyncHandler(async (req, res) => {
     throw new NotFoundError('Transaction not found');
   }
 
-  // Delete transaction
-  await prisma.transaction.delete({
-    where: { id }
+  // Calculate balance reversal
+  const balanceReversal = transaction.type === 'credit'
+    ? -Number(transaction.amount)
+    : Number(transaction.amount);
+
+  // Delete transaction and update balance atomically
+  await prisma.$transaction(async (tx) => {
+    // Delete transaction
+    await tx.transaction.delete({ where: { id } });
+
+    // ✅ NEW: Reverse balance change
+    await tx.account.update({
+      where: { id: transaction.accountId },
+      data: {
+        balance: {
+          increment: balanceReversal
+        }
+      }
+    });
   });
 
-  // ✅ Update budget after deletion
+  // Invalidate cache
+  await invalidateTransactionCache(userId);
+
+  // Update budget after deletion
   if (transaction.type === 'debit' && transaction.category) {
     try {
       await updateBudgetSpent(userId, transaction.category, transaction.date);
@@ -219,6 +307,7 @@ const deleteTransaction = asyncHandler(async (req, res) => {
       console.error('Failed to update budget after deletion:', budgetError);
     }
   }
+
   return successResponse(res, 200, 'Transaction deleted successfully');
 });
 

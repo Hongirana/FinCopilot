@@ -19,6 +19,7 @@ model Account {
 model Transaction {
   id          String             @id @default(uuid())
   userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   accountId   String
   account     Account            @relation(fields: [accountId], references: [id], onDelete: Cascade)
   amount      Decimal            @db.Decimal(12, 2)
@@ -29,7 +30,6 @@ model Transaction {
   date        DateTime
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
-  users       User[]
   feedbacks   CategoryFeedback[]
 
   @@index([userId, date])
@@ -63,4 +63,5 @@ enum Category {
   savings
   salary
   other
+  uncategorized
 }

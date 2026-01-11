@@ -25,7 +25,7 @@ exports.login = asyncHandler(async (req, res) => {
     const payload = {
         email: userData.email,
         id: userData.id,
-        name: userData.name
+        name: userData.firstName
     }
     const jwtToken = await authUtils.generateToken(payload);
     return successResponse(res, 200, 'Login successful', { token: jwtToken });

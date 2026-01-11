@@ -1,0 +1,20 @@
+model ScheduledReport {
+    id             Int    @id @default(autoincrement())
+    userId         String
+    user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    reportType     String // 'monthly', 'transactions', 'budget'
+    format         String // 'pdf', 'excel'
+    frequency      String // 'daily', 'weekly', 'monthly'
+    cronExpression String // Cron expression for scheduling
+
+    filters Json? // Optional filters
+
+    isActive  Boolean   @default(true)
+    lastRunAt DateTime?
+    lastError String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([userId])
+}

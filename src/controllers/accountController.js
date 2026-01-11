@@ -2,6 +2,8 @@ const accountModel = require('../models/accountModel');
 const { successResponse, errorResponse } = require('../utils/responseHelper');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { NotFoundError, ValidationError,  } = require('../utils/customErrors');
+const { invalidateUserCache } = require('../services/cacheService');
+
 
 const listAccounts = asyncHandler(async (req, res, next) => {
     const userId = req.user.id;
@@ -38,7 +40,7 @@ const createAccount = asyncHandler(async (req, res, next) => {
         balance: balance || 0,
         currency: currency || 'INR'
     });
-
+    await invalidateUserCache(userId);
     //sendSuccess(res, 201, 'Account created successfully', { account });
     return successResponse(res, 201, 'Account created successfully', { account });
 })
@@ -75,6 +77,7 @@ const updateAccount = asyncHandler(async (req, res, next) => {
     // Fetch updated account
     const updatedAccount = await accountModel.getAccountById(id, userId);
     console.log(updatedAccount);
+    await invalidateUserCache(userId);
     //sendSuccess(res, 200, 'Account updated successfully', { account: updatedAccount });
     return successResponse(res, 200, 'Account updated successfully', { account : updatedAccount });
 })
@@ -93,6 +96,7 @@ const deleteAccount = asyncHandler(async (req, res, next) => {
     }
     // Delete account
     await accountModel.deleteAccount(id, userId);
+    await invalidateUserCache(userId);
     //sendSuccess(res, 200, 'Account deleted successfully');
     return successResponse(res, 200, 'Account deleted successfully');
 
