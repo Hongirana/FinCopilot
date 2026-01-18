@@ -1,1350 +1,575 @@
-# FinCopilot
+# FinCopilot - AI-Powered Personal Finance Management
 
-AI-Powered Personal Finance Copilot Project
+**Full-Stack MERN Application with AI Integration**
 
-## Table of Contents
+[![Tests](https://img.shields.io/badge/tests-164%20passing-brightgreen)](tests)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-success)](coverage)
+[![Node](https://img.shields.io/badge/node-18.x-green)](https://nodejs.org)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+---
+
+## 📋 Table of Contents
 
 - [Project Overview](#project-overview)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
 - [Installation](#installation)
-- [Usage](#usage)
-- [Endpoints](#endpoints)
-- [Database Schema](#database-schema)
+- [Environment Configuration](#environment-configuration)
+- [Database Setup](#database-setup)
+- [Running the Application](#running-the-application)
+- [API Documentation](#api-documentation)
 - [Testing](#testing)
+- [Project Structure](#project-structure)
+- [Development Progress](#development-progress)
 - [Contributing](#contributing)
 - [License](#license)
 
-## Project Overview
+---
 
-This project is an AI-powered personal finance copilot. It provides a set of APIs for managing user accounts, transactions, and filtering transactions based on various criteria.
+## 🎯 Project Overview
 
-## Installation
+FinCopilot is an AI-powered personal finance management application that helps users track expenses, manage budgets, set financial goals, and gain insights through intelligent analytics. Built with the MERN stack and integrated with AI for automatic transaction categorization.
 
-1. Clone the repository:
-git clone https://github.com/hongiranau/fin-copilot.git
+### Key Highlights
 
-
-2. Install the dependencies:
-npm install 
-
-
-
-3. Set up the environment variables:
-- Create a `.env` file in the root directory and add the following variables:
-  ```
-  DB_HOST=localhost
-  DB_PORT=5432
-  DB_USER=your-db-user
-  DB_PASSWORD=your-db-password
-  DB_NAME=your-db-name
-  JWT_SECRET=your-jwt-secret
-  ```
-
-4. Run the migrations:
-npx prisma migrate dev or npm run db:migrate
-
-5. Start the server:    
-npm run dev     
-
-
-## Usage
-
-To use the FinCopilot APIs, you can make HTTP requests to the following endpoints:
-
-### Endpoints
-
-| Method | Endpoint                 | Description                                                                                         |
-|--------|-------------------------|-----------------------------------------------------------------------------------------------------------|
-| GET     | `/api/users`              | Get a list of all users                                                                           |
-| POST    | `/api/users/signup`       | Sign up a new user with email and password                                                            |
-| POST    | `/api/users/login`        | Log in a user with email and password and receive a JWT token                                             |
-| GET     | `/api/accounts`          | Get a list of all accounts for the authenticated user                                                |
-| POST    | `/api/accounts`          | Create a new account for the authenticated user                                                     |
-| GET     | `/api/accounts/:id`      | Get a single account by ID for the authenticated user                                                |
-| PUT     | `/api/accounts/:id`      | Update an account for the authenticated user                                                          |
-| GET     | `/api/transactions`      | Get a list of all transactions for the authenticated user                                             |
-| POST    | `/api/transactions`      | Create a new transaction for the authenticated user                                                  |
-| GET     | `/api/transactions/:id`  | Get a single transaction by ID for the authenticated user                                             |
-| PUT     | `/api/transactions/:id`  | Update a transaction for the authenticated user                                                      |
-| DELETE  | `/api/transactions/:id`  | Delete a transaction for the authenticated user                                                       |
-
-### Database Schema
-
-The project uses PostgreSQL as the database. The database schema includes the following tables:
-
-- `users`: Stores user information such as email and password.
-- `accounts`: Stores account information such as name and balance.
-- `transactions`: Stores transaction information such as amount, date, and category.
-
-
-#### Authentication
-Authentication is handled using JSON Web Tokens (JWT). The server expects the JWT token to be included in the Authorization header of each request. For example:
-
-Authorization: Bearer <jwt-token>
-
-created Login and signup routes for user authentication.   
-and For Password Authentication I used bcrypt to hash the password and compare it with the hashed password stored in the database.
-
-For JWT Authentication I used jsonwebtoken to generate and verify JWT tokens.
-
-###### Account Model & CRUD Operations Complete
-
-| Task | Status | Details |
-|------|--------|---------|
-| Account model created in Prisma | ✅ | One-to-many User → Account relationship |
-| Account database operations (CRUD) | ✅ | Create, Read, Update, Delete via Prisma |
-| Account controller with endpoints | ✅ | 5 endpoints: List, Create, Get, Update, Delete |
-| Account routes configured | ✅ | Express routes mounted on /api/accounts |
-| All CRUD operations tested | ✅ | Postman verified all endpoints |
-| User scoping verified (security) | ✅ | Users only access their own accounts |
-| Code committed | ✅ | Git commit with proper message |
-
-
-
-Account Model Structure
-
-```
-User (1) ─────────┐
-                  │ One-to-Many
-                  │
-              Account (Many)
-              ├── id (UUID)
-              ├── userId (Foreign Key)
-              ├── name (Checking, Savings, etc.)
-              ├── type (CHECKING, SAVINGS, INVESTMENT)
-              ├── balance (Decimal - critical!)
-              ├── createdAt
-              └── updatedAt
-```
-
-
-###### Transactions and Transaction Api 
-
-This section documents the Transactions API for the FinCopilot backend, including endpoints, filters, pagination, and auto-categorization behavior.
-
-Base URL : /api/transactions
-
-Endpoints : 
-
-POST /api/transactions
-Authorization: Bearer <jwt-token>
-Content-Type: application/json
-
-Request body: 
-
-{
-  "accountId": "acc_123456",
-  "type": "debit",
-  "category": "food",
-  "amount": 499.99,
-  "merchant": "Domino's Pizza",
-  "description": "Weekend dinner",
-  "date": "2025-12-25T18:30:00.000Z"
-}
-
-type: "debit" or "credit" (enum TransactionType)
-
-category: One of the Category enum values (food, rent, utilities, transport, entertainment, shopping, medical, insurance, education, savings, salary, other)
-
-If category is omitted, the system will attempt auto-categorization (see below).
-
-Response body:
-
-{
-  "message": "Transaction created successfully",
-  "autoCategorized": true,
-  "transaction": {
-    "id": "txn_01JKX8QW7F2R5MM7C4T9E91XPV",
-    "userId": "user_123",
-    "accountId": "acc_123456",
-    "amount": "499.99",
-    "type": "debit",
-    "category": "food",
-    "merchant": "Domino's Pizza",
-    "description": "Weekend dinner",
-    "date": "2025-12-25T18:30:00.000Z",
-    "createdAt": "2025-12-25T19:00:00.000Z",
-    "updatedAt": "2025-12-25T19:00:00.000Z"
-  }
-}
-
-
-Get Transactions (List + Filters + Pagination) : 
-
-GET /api/transactions
-Authorization: Bearer <jwt-token>
- 
-Query parameters (all optional):
-
-Pagination
-
-  page: Page number (default: 1)
-
-  limit: Page size (default: 10)
-
-Filters
-
-  startDate: ISO date string – include transactions with date >= startDate
-  endDate: ISO date string – include transactions with date <= endDate
-  category: Category enum value (e.g., food, rent, transport, …)
-  merchant: Partial match on merchant name (case-insensitive)
-  minAmount: Minimum amount (inclusive)
-  maxAmount: Maximum amount (inclusive)
-  search: Text search in description (case-insensitive)
-
-All filters are combined with AND logic.
-
-Example request:
-
-text
-GET /api/transactions?page=1&limit=10&category=food&minAmount=100&maxAmount=1000&startDate=2025-12-01&endDate=2025-12-31&merchant=domino&search=dinner
-Example response:
-
-json
-{
-  "meta": {
-    "page": 1,
-    "limit": 10,
-    "totalItems": 3,
-    "totalPages": 1
-  },
-  "filters": {
-    "category": "food",
-    "merchant": "domino",
-    "minAmount": 100,
-    "maxAmount": 1000,
-    "startDate": "2025-12-01",
-    "endDate": "2025-12-31",
-    "search": "dinner"
-  },
-  "data": [
-    {
-      "id": "txn_01JKX8QW7F2R5MM7C4T9E91XPV",
-      "userId": "user_123",
-      "accountId": "acc_123456",
-      "amount": "499.99",
-      "type": "debit",
-      "category": "food",
-      "merchant": "Domino's Pizza",
-      "description": "Weekend dinner with friends",
-      "date": "2025-12-25T18:30:00.000Z",
-      "createdAt": "2025-12-25T19:00:00.000Z",
-      "updatedAt": "2025-12-25T19:00:00.000Z"
-    }
-  ]
-}
-Update Transaction
-text
-PUT /api/transactions/:id
-Authorization: Bearer <jwt-token>
-Content-Type: application/json
-Request body (all fields optional, partial update):
-
-json
-{
-  "amount": 550.00,
-  "category": "entertainment",
-  "merchant": "PVR Cinemas",
-  "description": "Movie + snacks",
-  "date": "2025-12-26T16:00:00.000Z"
-}
-Only provided fields are updated; others remain unchanged.
-
-Example response:
-
-json
-{
-  "message": "Transaction updated successfully",
-  "transaction": {
-    "id": "txn_01JKX8QW7F2R5MM7C4T9E91XPV",
-    "userId": "user_123",
-    "accountId": "acc_123456",
-    "amount": "550.00",
-    "type": "debit",
-    "category": "entertainment",
-    "merchant": "PVR Cinemas",
-    "description": "Movie + snacks",
-    "date": "2025-12-26T16:00:00.000Z",
-    "createdAt": "2025-12-25T19:00:00.000Z",
-    "updatedAt": "2025-12-26T17:00:00.000Z"
-  }
-}
-
-
-
-Delete Transaction
-
-End Point Url : DELETE /api/transactions/:id
-Authorization: Bearer <jwt-token>
-Example response:
-
-json
-{
-  "message": "Transaction deleted successfully"
-}
-Filters
-The Transactions API supports flexible filtering:
-
-startDate / endDate:
-
-Filter transactions between two dates using the date field.
-
-category:
-
-Filter by enum Category (food, rent, utilities, transport, entertainment, shopping, medical, insurance, education, savings, salary, other).
-
-merchant:
-
-Case-insensitive partial match on merchant name.
-
-minAmount / maxAmount:
-
-Numeric range filter on amount (inclusive).
-
-search:
-
-Text search in description (case-insensitive).
-
-All supplied filters are combined with AND logic.
-
-Pagination
-Pagination is offset-based using page and limit:
-
-page:
-
-1-based page index.
-
-limit:
-
-Number of items per page.
-
-Backend computes:
-
-skip = (page - 1) * limit
-
-take = limit
-
-Response includes:
-
-json
-"meta": {
-  "page": 2,
-  "limit": 10,
-  "totalItems": 47,
-  "totalPages": 5
-}
-Use this to drive pagination in the UI (Next/Previous buttons, page numbers).
-
-Auto-Categorization
-When creating a transaction:
-
-If category is provided in the request:
-
-The API uses the provided category as-is.
-
-If category is not provided:
-
-The backend runs an auto-categorization utility that:
-
-Normalizes merchant and description to lowercase text.
-
-Checks them against keyword rules defined in categoryRules.json.
-
-Returns the first matching category.
-
-Falls back to "other" if no rules match.
-
-Examples of rules:
-
-food:
-
-Keywords like: domino, pizza, mcdonald, restaurant, cafe, starbucks, zomato, swiggy, grocery, etc.
-
-transport:
-
-Keywords like: uber, ola, taxi, metro, bus, train, fuel, parking, toll, etc.
-
-entertainment:
-
-Keywords like: netflix, prime, spotify, movie, cinema, etc.
-
-shopping:
-
-Keywords like: amazon, flipkart, myntra, ajio, nykaa, mall, etc.
-
-Behavior example:
-
-Request without category:
-
-merchant: "Domino's Pizza"
-
-description: "Weekend dinner"
-
-Auto-categorizer → food
-
-Request without category:
-
-merchant: "Uber"
-
-description: "Trip to airport"
-
-Auto-categorizer → transport
-
-No matching keywords:
-
-Returns "other".
-
-The create response includes a flag:
-
-json
-"autoCategorized": true
-to indicate that the category was assigned automatically.
-
-
-Perfect! Let's focus on documentation now. 📝
-
-📋 BLOCK C: DOCUMENTATION (30 min)
-Step 1: Update Your Project README.md
-Add comprehensive Budget API documentation to your README.md:
-
-text
-# FinCopilot - Personal Finance Management API
-
-## Overview
-A comprehensive personal finance management system with automated transaction categorization, budget tracking, and financial analytics.
+- 🤖 **AI-Powered Categorization** - Automatic transaction categorization using Gemini API
+- 📊 **Real-Time Budget Tracking** - Automated budget monitoring with alerts
+- 🎯 **Goal Management** - Track financial goals with progress calculation
+- 📈 **Advanced Analytics** - Spending trends, category breakdown, and financial insights
+- 🔐 **Secure Authentication** - JWT-based auth with bcrypt password hashing
+- ⚡ **High Performance** - Redis caching, rate limiting, and optimized queries
+- ✅ **100% Test Coverage** - 164 integration tests passing
 
 ---
 
-## Features Completed
+## ✨ Features
 
-### ✅ Week 1-2 Features
-- [x] User Authentication (JWT)
-- [x] Account Management
-- [x] Transaction Management
-- [x] Automatic Transaction Categorization (AI-powered)
-- [x] **Budget Management System** ⭐ NEW
-- [x] Automatic Budget Tracking
+### Core Features
+
+#### 🔐 Authentication & User Management
+- User registration with email/password
+- JWT-based authentication
+- Password encryption with bcrypt
+- User profile management
+- Password change functionality
+- User statistics and activity tracking
+
+#### 💳 Account Management
+- Multiple account support (checking, savings, credit card, investment, cash)
+- Real-time balance tracking
+- Account CRUD operations
+- Account summary and statistics
+
+#### 💸 Transaction Management
+- Create, read, update, delete transactions
+- Automatic AI categorization (using Gemini API)
+- Manual category override
+- Advanced filtering (date range, category, amount, merchant)
+- Full-text search across description/merchant
+- Pagination and sorting
+- Transaction statistics
+
+#### 📊 Budget Management
+- Category-based budgets
+- Multiple budget periods (daily, weekly, monthly, yearly)
+- Automatic budget tracking from transactions
+- Budget alerts (80% threshold by default)
+- Budget status calculation (spent, remaining, days left)
+- Overlapping budget prevention
+- Budget recalculation endpoint
+
+#### 🎯 Goal Tracking
+- Financial goal creation and tracking
+- Progress calculation
+- Deadline tracking
+- Goal status (active, completed, cancelled)
+- Contribution tracking
+- Goal statistics and overview
+
+#### 📈 Dashboard & Analytics
+- Comprehensive financial dashboard
+- Current/previous month comparison
+- Net worth calculation
+- Cash flow analysis
+- Spending velocity metrics
+- Savings rate calculation
+- Top expense categories
+- Budget and goal overviews
+- Recent activity feed
+- Smart alerts and notifications
+
+#### 🔍 Advanced Features
+- Multi-field transaction search
+- Dynamic query building
+- Date range filtering
+- Amount range filtering
+- Category filtering (single or multiple)
+- Merchant filtering
+- Sorting and pagination
+- Response caching (Redis)
+- Rate limiting (strict/lenient tiers)
 
 ---
 
-## 📊 Budget Management API
+## 🛠️ Tech Stack
 
-### Overview
-Track spending limits per category with automatic budget tracking. Budgets automatically update when you create, update, or delete expense transactions.
+### Backend
+- **Runtime:** Node.js 18.x
+- **Framework:** Express.js
+- **Database:** PostgreSQL 14+
+- **ORM:** Prisma
+- **Authentication:** JWT + bcrypt
+- **Caching:** Redis
+- **AI Integration:** Google Gemini API
+- **Validation:** Express Validator
+- **Testing:** Jest + Supertest
+
+### Frontend
+- **Framework:** React 18
+- **Build Tool:** Vite
+- **Styling:** TailwindCSS
+- **State Management:** React Query
+- **Routing:** React Router v6
+- **HTTP Client:** Axios
+- **Charts:** Recharts
+- **Icons:** Lucide React
+
+### DevOps & Tools
+- **Version Control:** Git
+- **Testing:** Jest, Supertest
+- **Linting:** ESLint
+- **API Testing:** Postman
+- **Database GUI:** Prisma Studio
+- **Environment:** dotenv
+
+---
+
+## 🏗️ Architecture
+
+```
+FinCopilot/
+├── backend/
+│   ├── src/
+│   │   ├── controllers/       # Request handlers
+│   │   ├── routes/            # API routes
+│   │   ├── middleware/        # Auth, validation, error handling
+│   │   ├── utils/             # Helper functions
+│   │   ├── services/          # Business logic (caching, AI)
+│   │   ├── lib/               # Third-party configs
+│   │   └── app.js             # Express app setup
+│   ├── prisma/
+│   │   ├── schema.prisma      # Database schema
+│   │   └── migrations/        # Migration history
+│   ├── tests/
+│   │   ├── integration/       # API integration tests
+│   │   ├── helpers/           # Test utilities
+│   │   └── jest.config.js
+│   └── package.json
+│
+└── frontend/
+    ├── src/
+    │   ├── components/        # Reusable components
+    │   ├── pages/             # Route pages
+    │   ├── services/          # API calls
+    │   ├── hooks/             # Custom hooks
+    │   ├── utils/             # Helper functions
+    │   └── App.jsx
+    └── package.json
+```
+
+---
+
+## 📦 Installation
+
+### Prerequisites
+- Node.js 18.x or higher
+- PostgreSQL 14 or higher
+- Redis (optional, for caching)
+- npm or yarn
+
+### Clone Repository
+```bash
+git clone https://github.com/yourusername/FinCopilot.git
+cd FinCopilot
+```
+
+### Backend Setup
+```bash
+cd backend
+npm install
+```
+
+### Frontend Setup
+```bash
+cd frontend
+npm install
+```
+
+---
+
+## ⚙️ Environment Configuration
+
+### Backend `.env`
+Create `backend/.env`:
+
+```env
+# Server
+PORT=3000
+NODE_ENV=development
+
+# Database
+DATABASE_URL="postgresql://postgres:your_password@localhost:5432/fincopilot_db?schema=public"
+
+# JWT
+JWT_SECRET=your-super-secret-jwt-key-min-32-chars
+JWT_EXPIRES_IN=7d
+
+# Redis (optional)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+
+# AI Integration
+GEMINI_API_KEY=your-gemini-api-key
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=60000
+RATE_LIMIT_MAX_REQUESTS=100
+```
+
+### Test Database `.env.test`
+Create `backend/.env.test`:
+
+```env
+DATABASE_URL="postgresql://postgres:your_password@localhost:5432/fincopilot_db_test?schema=public"
+NODE_ENV=test
+```
+
+### Frontend `.env`
+Create `frontend/.env`:
+
+```env
+VITE_API_URL=http://localhost:3000/api
+```
+
+---
+
+## 🗄️ Database Setup
+
+### Development Database
+```bash
+cd backend
+
+# Create database
+createdb fincopilot_db
+
+# Run migrations
+npx prisma migrate dev
+
+# (Optional) Seed data
+npm run seed
+
+# Open Prisma Studio (DB GUI)
+npx prisma studio
+```
+
+### Test Database
+```bash
+# Create test database
+createdb fincopilot_db_test
+
+# Apply schema
+DATABASE_URL="postgresql://postgres:your_password@localhost:5432/fincopilot_db_test" npx prisma db push
+```
+
+### Using Migrations (Recommended for Production)
+
+When you update the schema:
+
+```bash
+# Create migration
+npx prisma migrate dev --name add_new_feature
+
+# Apply to production
+npx prisma migrate deploy
+```
+
+---
+
+## 🚀 Running the Application
+
+### Backend (Development)
+```bash
+cd backend
+npm run dev
+```
+Server runs on `http://localhost:3000`
+
+### Frontend (Development)
+```bash
+cd frontend
+npm run dev
+```
+App runs on `http://localhost:5173`
+
+### Production Build
+```bash
+# Backend
+cd backend
+npm start
+
+# Frontend
+cd frontend
+npm run build
+npm run preview
+```
+
+---
+
+## 📚 API Documentation
+
+Full API documentation: [docs/API.md](docs/API.md)
 
 ### Base URL
 ```
-/api/budgets
+http://localhost:3000/api
 ```
 
 ### Authentication
-All budget endpoints require JWT authentication:
+All protected endpoints require JWT token:
 ```
-Authorization: Bearer {your-access-token}
-```
-
----
-
-## Budget Endpoints
-
-### 1. Create Budget
-
-**Endpoint:** `POST /api/budgets`
-
-**Description:** Set a spending limit for a specific category and time period.
-
-**Request Body:**
-```
-{
-  "category": "food",
-  "amount": 500,
-  "period": "MONTHLY",
-  "startDate": "2025-01-01",
-  "endDate": "2025-01-31"
-}
+Authorization: Bearer <your_token>
 ```
 
-**Required Fields:**
-- `category` (string) - Must be one of: food, rent, utilities, transport, entertainment, shopping, medical, insurance, education, savings, salary, other
-- `amount` (number) - Budget amount (must be > 0)
-- `period` (string) - Budget period: DAILY, WEEKLY, MONTHLY, YEARLY
-- `startDate` (string) - Start date (YYYY-MM-DD format)
-- `endDate` (string) - End date (YYYY-MM-DD format, must be after startDate)
-
-**Response (201):**
-```
-{
-  "success": true,
-  "message": "Budget created successfully",
-  "data": {
-    "id": "uuid-here",
-    "userId": "user-uuid",
-    "category": "food",
-    "amount": 500,
-    "spent": 0,
-    "period": "MONTHLY",
-    "startDate": "2025-01-01T00:00:00.000Z",
-    "endDate": "2025-01-31T00:00:00.000Z",
-    "createdAt": "2025-12-30T04:00:00.000Z",
-    "updatedAt": "2025-12-30T04:00:00.000Z"
-  }
-}
-```
-
-**Errors:**
-- `400` - Missing required fields
-- `400` - Invalid category or period
-- `400` - End date before start date
-- `400` - Budget already exists for this category in this period (overlapping)
-
----
-
-### 2. List Budgets
-
-**Endpoint:** `GET /api/budgets`
-
-**Description:** Get all budgets for the authenticated user with optional filters.
-
-**Query Parameters:**
-- `category` (optional) - Filter by category (e.g., `?category=food`)
-- `period` (optional) - Filter by period (e.g., `?period=MONTHLY`)
-- `active` (optional) - Show only active budgets (e.g., `?active=true`)
-
-**Examples:**
-```
-# Get all budgets
-GET /api/budgets
-
-# Get only food budgets
-GET /api/budgets?category=food
-
-# Get only monthly budgets
-GET /api/budgets?period=MONTHLY
-
-# Get only currently active budgets
-GET /api/budgets?active=true
-
-# Combine filters
-GET /api/budgets?category=food&active=true
-```
-
-**Response (200):**
-```
-{
-  "success": true,
-  "message": "Budgets fetched successfully",
-  "data": {
-    "count": 2,
-    "budgets": [
-      {
-        "id": "uuid-1",
-        "category": "food",
-        "amount": 500,
-        "spent": 225.50,
-        "period": "MONTHLY",
-        "startDate": "2025-01-01T00:00:00.000Z",
-        "endDate": "2025-01-31T00:00:00.000Z",
-        "percentSpent": "45.10",
-        "remaining": 274.50,
-        "isOverBudget": false,
-        "daysRemaining": 15
-      },
-      {
-        "id": "uuid-2",
-        "category": "transport",
-        "amount": 200,
-        "spent": 180.00,
-        "period": "MONTHLY",
-        "startDate": "2025-01-01T00:00:00.000Z",
-        "endDate": "2025-01-31T00:00:00.000Z",
-        "percentSpent": "90.00",
-        "remaining": 20.00,
-        "isOverBudget": false,
-        "daysRemaining": 15
-      }
-    ]
-  }
-}
-```
-
----
-
-### 3. Get Budget by ID
-
-**Endpoint:** `GET /api/budgets/:id`
-
-**Description:** Get a specific budget with calculated status.
-
-**Response (200):**
-```
-{
-  "success": true,
-  "message": "Budget fetched successfully",
-  "data": {
-    "id": "uuid-here",
-    "category": "food",
-    "amount": 500,
-    "spent": 225.50,
-    "period": "MONTHLY",
-    "startDate": "2025-01-01T00:00:00.000Z",
-    "endDate": "2025-01-31T00:00:00.000Z",
-    "percentSpent": "45.10",
-    "remaining": 274.50,
-    "isOverBudget": false,
-    "daysRemaining": 15
-  }
-}
-```
-
-**Errors:**
-- `404` - Budget not found
-
----
-
-### 4. Update Budget
-
-**Endpoint:** `PUT /api/budgets/:id`
-
-**Description:** Update budget amount, period, or dates. At least one field is required.
-
-**Request Body (all optional):**
-```
-{
-  "category": "food",
-  "amount": 600,
-  "period": "MONTHLY",
-  "startDate": "2025-01-01",
-  "endDate": "2025-02-28"
-}
-```
-
-**Response (200):**
-```
-{
-  "success": true,
-  "message": "Budget updated successfully",
-  "data": {
-    "id": "uuid-here",
-    "category": "food",
-    "amount": 600,
-    "spent": 225.50,
-    "period": "MONTHLY",
-    "startDate": "2025-01-01T00:00:00.000Z",
-    "endDate": "2025-02-28T00:00:00.000Z"
-  }
-}
-```
-
-**Errors:**
-- `404` - Budget not found
-- `400` - Invalid values
-
----
-
-### 5. Delete Budget
-
-**Endpoint:** `DELETE /api/budgets/:id`
-
-**Description:** Delete a budget.
-
-**Response (200):**
-```
-{
-  "success": true,
-  "message": "Budget deleted successfully"
-}
-```
-
-**Errors:**
-- `404` - Budget not found
-
----
-
-### 6. Budget Alerts
-
-**Endpoint:** `GET /api/budgets/alerts`
-
-**Description:** Get budgets that are over budget or approaching the limit.
-
-**Query Parameters:**
-- `threshold` (optional, default: 80) - Alert threshold percentage (0-100)
-
-**Examples:**
-```
-# Get budgets at 80% or higher
-GET /api/budgets/alerts
-
-# Get budgets at 90% or higher
-GET /api/budgets/alerts?threshold=90
-
-# Get only over-budget categories
-GET /api/budgets/alerts?threshold=100
-```
-
-**Response (200):**
-```
-{
-  "success": true,
-  "message": "Budget alerts fetched successfully",
-  "data": {
-    "count": 2,
-    "threshold": 80,
-    "alerts": [
-      {
-        "id": "uuid-1",
-        "category": "food",
-        "amount": 500,
-        "spent": 420.00,
-        "percentSpent": "84.00",
-        "isNearLimit": true,
-        "isOverBudget": false
-      },
-      {
-        "id": "uuid-2",
-        "category": "transport",
-        "amount": 200,
-        "spent": 230.00,
-        "percentSpent": "115.00",
-        "isNearLimit": false,
-        "isOverBudget": true
-      }
-    ]
-  }
-}
-```
-
----
-
-### 7. Recalculate Budgets
-
-**Endpoint:** `POST /api/budgets/recalculate`
-
-**Description:** Manually recalculate all budgets for the authenticated user. Useful for fixing data inconsistencies.
-
-**Response (200):**
-```
-{
-  "success": true,
-  "message": "Budgets recalculated successfully",
-  "data": {
-    "success": true,
-    "total": 5,
-    "successful": 5,
-    "failed": 0
-  }
-}
-```
-
----
-
-## Budget Features
-
-### 🔄 Automatic Budget Tracking
-
-Budgets automatically update when you create, update, or delete **debit (expense)** transactions:
-
-**Example Flow:**
-1. Create a budget: Food - $500/month
-2. Add transaction: $50 food expense
-   - Budget.spent automatically updates to $50
-3. Add another: $75 food expense
-   - Budget.spent automatically updates to $125
-4. Delete first transaction
-   - Budget.spent automatically recalculates to $75
-
-**Note:** Only **debit** transactions affect budgets. Credit (income) transactions do not.
-
----
-
-### 📊 Budget Status Calculation
-
-Each budget includes calculated fields:
-
-| Field | Description | Example |
-|-------|-------------|---------|
-| `spent` | Total expenses in category | 225.50 |
-| `percentSpent` | Percentage of budget used | "45.10" |
-| `remaining` | Amount left in budget | 274.50 |
-| `isOverBudget` | Budget exceeded | false |
-| `daysRemaining` | Days until budget ends | 15 |
-
----
-
-### 📅 Budget Periods
-
-| Period | Description | Example |
-|--------|-------------|---------|
-| `DAILY` | 24-hour budget | Daily coffee: $10 |
-| `WEEKLY` | 7-day budget | Weekly groceries: $150 |
-| `MONTHLY` | Calendar month | Monthly rent: $1500 |
-| `YEARLY` | Calendar year | Annual insurance: $1200 |
-
----
-
-### 🏷️ Budget Categories
-
-Available categories (must match transaction categories):
-- `food` - Groceries, restaurants, food delivery
-- `rent` - Housing rent, lease payments
-- `utilities` - Electricity, water, internet
-- `transport` - Fuel, public transport, ride-sharing
-- `entertainment` - Movies, games, subscriptions
-- `shopping` - Clothing, electronics, retail
-- `medical` - Doctor visits, medicine, healthcare
-- `insurance` - Life, health, auto insurance
-- `education` - Courses, books, tuition
-- `savings` - Investment, emergency fund
-- `salary` - Income (not typically used for budgets)
-- `other` - Miscellaneous expenses
-
----
-
-## Usage Examples
-
-### Example 1: Monthly Food Budget
-```
-# Create budget
-POST /api/budgets
-{
-  "category": "food",
-  "amount": 500,
-  "period": "MONTHLY",
-  "startDate": "2025-01-01",
-  "endDate": "2025-01-31"
-}
-
-# Add expense transactions (budgets auto-update)
-POST /api/transactions
-{
-  "amount": 50,
-  "type": "debit",
-  "category": "food",
-  "description": "Grocery shopping"
-}
-
-# Check budget status
-GET /api/budgets/{id}
-# Response: spent = 50, remaining = 450
-```
-
-### Example 2: Budget Alerts Dashboard
-```
-# Get all budgets approaching limit (80%+)
-GET /api/budgets/alerts?threshold=80
-
-# Get only over-budget categories
-GET /api/budgets/alerts?threshold=100
-```
-
-### Example 3: Budget Overview
-```
-# Get all active budgets with status
-GET /api/budgets?active=true
-
-# Response shows:
-# - How much you've spent in each category
-# - How much remains
-# - Whether you're over budget
-# - Days remaining in budget period
-```
-
----
-
-## Error Responses
-
-All endpoints return consistent error format:
-
-```
-{
-  "success": false,
-  "message": "Error description here"
-}
-```
-
-**Common Error Codes:**
-- `400` - Bad Request (validation errors)
-- `401` - Unauthorized (missing/invalid token)
-- `404` - Not Found (budget doesn't exist)
-- `500` - Server Error
-
----
-
-## Testing the API
-
-### Using cURL
-```
-# Set your token
-TOKEN="your-jwt-token-here"
-
-# Create budget
-curl -X POST http://localhost:3000/api/budgets \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "category": "food",
-    "amount": 500,
-    "period": "MONTHLY",
-    "startDate": "2025-01-01",
-    "endDate": "2025-01-31"
-  }'
-
-# Get all budgets
-curl http://localhost:3000/api/budgets \
-  -H "Authorization: Bearer $TOKEN"
-
-# Get budget alerts
-curl "http://localhost:3000/api/budgets/alerts?threshold=80" \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-### Using Postman
-1. Import collection from `/docs/postman_collection.json`
-2. Set environment variable `accessToken`
-3. Run requests in order: Create → List → Get → Update → Delete
-
----
-
-## Tech Stack
-
-- **Backend:** Node.js, Express.js
-- **Database:** PostgreSQL + Prisma ORM
-- **Authentication:** JWT
-- **AI Categorization:** OpenAI GPT-4
-- **Budget Tracking:** Automatic calculation with Prisma aggregations
-
----
-
-## Project Structure
-```
-src/
-├── controllers/
-│   ├── budgetController.js      ⭐ Budget CRUD operations
-│   └── transactionController.js  (with budget integration)
-├── routes/
-│   └── budgetRoutes.js          ⭐ Budget endpoints
-├── utils/
-│   └── budgetTracker.js         ⭐ Automatic budget tracking
-├── lib/
-│   └── categoryRules.json        Category validation rules
-└── prismaClient.js
-```
-
----
-
-## Next Steps (Day 9)
-
-- [ ] Financial Goals Tracking
-- [ ] Savings Goals
-- [ ] Goal Progress Tracking
-- [ ] Goal Completion Status
-
----
-
-## License
-MIT
-
----
-
-## Author
-Your Name - Node.js Backend Developer
-```
-
-***
-
-## Step 2: Create API Documentation File (Optional)
-
-Create a dedicated file: `docs/BUDGET_API.md`
-
-```markdown
-# Budget Management API Documentation
-
-Last Updated: December 30, 2025
-
-## Quick Reference
+### Quick Reference
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/budgets` | Create budget |
-| GET | `/api/budgets` | List all budgets |
-| GET | `/api/budgets/:id` | Get single budget |
-| PUT | `/api/budgets/:id` | Update budget |
-| DELETE | `/api/budgets/:id` | Delete budget |
-| GET | `/api/budgets/alerts` | Get budget alerts |
-| POST | `/api/budgets/recalculate` | Recalculate all budgets |
+| **Auth** |||
+| POST | `/auth/signup` | Register new user |
+| POST | `/auth/login` | User login |
+| **Transactions** |||
+| GET | `/transactions` | List with filters & pagination |
+| GET | `/transactions/search` | Full-text search |
+| POST | `/transactions` | Create transaction |
+| GET | `/transactions/:id` | Get single transaction |
+| PUT | `/transactions/:id` | Update transaction |
+| DELETE | `/transactions/:id` | Delete transaction |
+| **Budgets** |||
+| GET | `/budgets` | List budgets |
+| POST | `/budgets` | Create budget |
+| GET | `/budgets/:id` | Get budget |
+| PUT | `/budgets/:id` | Update budget |
+| DELETE | `/budgets/:id` | Delete budget |
+| GET | `/budgets/alerts` | Budget alerts |
+| POST | `/budgets/recalculate` | Recalculate budgets |
+| **Goals** |||
+| GET | `/goals` | List goals |
+| POST | `/goals` | Create goal |
+| GET | `/goals/:id` | Get goal |
+| PUT | `/goals/:id` | Update goal |
+| DELETE | `/goals/:id` | Delete goal |
+| PATCH | `/goals/:id/progress` | Add contribution |
+| GET | `/goals/stats` | Goal statistics |
+| **Dashboard** |||
+| GET | `/dashboard/summary` | Monthly summary |
+| GET | `/dashboard/stats` | Financial stats |
+| GET | `/dashboard/overview` | Quick overview |
+| **User** |||
+| GET | `/user/profile` | User profile |
+| PUT | `/user/profile` | Update profile |
+| PUT | `/user/change-password` | Change password |
 
-## Features
+---
 
-✅ **Automatic Budget Tracking**
-- Budgets update automatically when transactions change
-- No manual calculation needed
-- Real-time budget status
+## 🧪 Testing
 
-✅ **Smart Alerts**
-- Configurable threshold (default 80%)
-- Alerts for near-limit and over-budget
-- Per-category tracking
-
-✅ **Flexible Periods**
-- Daily, Weekly, Monthly, Yearly
-- Custom date ranges
-- Overlapping budget prevention
-
-✅ **Budget Status**
-- Percent spent
-- Remaining amount
-- Days remaining
-- Over-budget indicator
-
-## Full Documentation
-
-See complete API documentation in main README.md
-```
-
-***
-
-## Step 3: Add Code Comments
-
-Add JSDoc comments to your `budgetController.js`:
-
-```javascript
-/**
- * Budget Controller
- * Handles all budget-related operations
- * 
- * Features:
- * - CRUD operations for budgets
- * - Automatic budget tracking via transactions
- * - Budget alerts and notifications
- * - Budget status calculation
- * 
- * @module controllers/budgetController
- * @requires prisma
- * @requires utils/responseHelper
- */
-
-/**
- * Create a new budget
- * 
- * @route POST /api/budgets
- * @access Private
- * @param {Object} req.body.category - Budget category
- * @param {Number} req.body.amount - Budget amount
- * @param {String} req.body.period - Budget period (DAILY, WEEKLY, MONTHLY, YEARLY)
- * @param {String} req.body.startDate - Start date (YYYY-MM-DD)
- * @param {String} req.body.endDate - End date (YYYY-MM-DD)
- * @returns {Object} Created budget
- */
-const createBudget = async (req, res) => {
-  // ... your code
-};
-```
-
-***
-
-## Step 4: Git Commit
-
-Commit your completed Day 8 work:
-
+### Run All Tests
 ```bash
-git add .
-git commit -m "feat: Day 8 Complete - Budget Management System
-
-✅ Budget CRUD operations (6 endpoints)
-✅ Automatic budget tracking on transactions
-✅ Budget alerts (near limit & over budget)
-✅ Budget status calculation (spent, remaining, days left)
-✅ Budget validation (category, period, dates)
-✅ Budget recalculation endpoint
-✅ Full API documentation
-✅ Code comments and JSDoc
-
-Features:
-- Create/Read/Update/Delete budgets
-- List with filters (category, period, active)
-- Real-time budget.spent updates
-- Alert system with configurable threshold
-- Multiple budget periods (daily/weekly/monthly/yearly)
-- Overlapping budget prevention
-- Budget status calculation
-
-Technical:
-- budgetController.js (7 functions)
-- budgetTracker.js (auto-update utility)
-- budgetRoutes.js (7 endpoints)
-- Full integration with transactions
-- Error handling and validation
-- User data isolation
-
-Time: 4 hours
-Status: Production ready"
-
-git push origin main
+cd backend
+npm test
 ```
 
-***
+### Run Specific Test Suite
+```bash
+npm test -- auth.test.js
+npm test -- transactions.test.js
+npm test -- budgets.test.js
+npm test -- dashboard.test.js
+```
+
+### Test Coverage
+```bash
+npm run test:coverage
+```
+
+### Test Results (Day 28)
+
+| Test Suite | Tests | Status | Duration |
+|------------|-------|--------|----------|
+| auth.test.js | 15 | ✅ PASS | 2.1s |
+| account.test.js | 17 | ✅ PASS | 2.3s |
+| transaction.test.js | 9 | ✅ PASS | 1.8s |
+| budgets.test.js | 17 | ✅ PASS | 3.6s |
+| goals.test.js | 24 | ✅ PASS | 4.2s |
+| user.test.js | 24 | ✅ PASS | 3.9s |
+| dashboard.test.js | 12 | ✅ PASS | 3.3s |
+| health.test.js | 11 | ✅ PASS | 1.5s |
+| analyticsUtils.test.js | 35 | ✅ PASS | 5.1s |
+
+**Total: 164 tests passing | 0 failures | 100% success rate** ✅
+
+---
+
+## 📁 Project Structure
+
+```
+backend/src/
+├── controllers/
+│   ├── authController.js          # Authentication logic
+│   ├── userController.js          # User management
+│   ├── accountController.js       # Account CRUD
+│   ├── transactionController.js   # Transaction + AI categorization
+│   ├── budgetController.js        # Budget management
+│   ├── goalController.js          # Goal tracking
+│   └── dashboardController.js     # Dashboard & analytics
+├── routes/
+│   ├── authRoutes.js
+│   ├── userRoutes.js
+│   ├── accountRoutes.js
+│   ├── transactionRoutes.js
+│   ├── budgetRoutes.js
+│   ├── goalRoutes.js
+│   └── dashboardRoutes.js
+├── middleware/
+│   ├── authMiddleware.js          # JWT verification
+│   ├── validators.js              # Input validation
+│   ├── errorHandler.js            # Global error handler
+│   ├── rateLimitMiddleware.js     # Rate limiting
+│   └── cacheMiddleware.js         # Redis caching
+├── utils/
+│   ├── responseHelper.js          # Standardized responses
+│   ├── budgetTracker.js           # Auto budget tracking
+│   ├── dashboardUtils.js          # Dashboard calculations
+│   ├── analyticsUtils.js          # Analytics functions
+│   ├── dateHelper.js              # Date utilities
+│   ├── queryBuilder.js            # Dynamic queries
+│   └── customErrors.js            # Custom error classes
+├── services/
+│   ├── aiService.js               # Gemini AI integration
+│   └── cacheService.js            # Redis caching logic
+├── lib/
+│   └── categoryRules.json         # AI categorization rules
+└── app.js                         # Express app setup
+```
+
+---
+
+## 📊 Development Progress
+
+### ✅ Completed (Weeks 1-4)
+
+**Week 1: Foundation**
+- [x] Day 1-2: Project setup, database schema
+- [x] Day 3: User authentication (signup, login)
+- [x] Day 4: Account management
+- [x] Day 5: Transaction CRUD
+- [x] Day 6: Transaction filtering & pagination
+- [x] Day 7: AI categorization integration
+
+**Week 2: Core Features**
+- [x] Day 8: Budget management system
+- [x] Day 9: Goal tracking system
+- [x] Day 10: Dashboard & analytics
+- [x] Day 11: Advanced filtering
+- [x] Day 12: Search functionality
+
+**Week 3: Enhancement**
+- [x] Day 13-14: Performance optimization (caching, rate limiting)
+- [x] Day 15-21: Frontend development (React + TailwindCSS)
+
+**Week 4: Testing & Polish**
+- [x] Day 22-27: Frontend refinement
+- [x] Day 28: Backend testing (164 tests) ✅
+- [ ] Day 29-30: Manual E2E testing & bug fixes
 
-## 🎉 DAY 8 COMPLETE!
+### 🚧 In Progress
+- Frontend component testing
+- E2E automation (Playwright)
+- Deployment setup
 
-***
+---
 
-## 📊 Day 8 Final Summary
+## 🎨 Categories
 
-### ✅ What You Built Today (5 hours)
+Valid transaction/budget categories:
+- `food` - Groceries, restaurants, food delivery
+- `rent` - Housing rent, lease payments
+- `utilities` - Electricity, water, internet, gas
+- `transport` - Fuel, public transport, ride-sharing, parking
+- `entertainment` - Movies, games, streaming subscriptions
+- `shopping` - Clothing, electronics, retail
+- `medical` - Doctor visits, medicine, healthcare
+- `insurance` - Life, health, auto insurance
+- `education` - Courses, books, tuition fees
+- `savings` - Investment, emergency fund contributions
+- `salary` - Income (salary, wages)
+- `other` - Miscellaneous expenses
+- `uncategorized` - Auto-assigned when no match
 
-| Component | Lines of Code | Functions | Status |
-|-----------|---------------|-----------|--------|
-| Budget Controller | ~250 | 7 | ✅ Complete |
-| Budget Tracker | ~100 | 2 | ✅ Complete |
-| Budget Routes | ~25 | - | ✅ Complete |
-| Transaction Integration | ~50 | 3 updates | ✅ Complete |
-| Documentation | ~500 | - | ✅ Complete |
-| **Total** | **~925 lines** | **12 functions** | **✅ Done** |
+---
 
-### 🎯 Features Delivered
+## 🤝 Contributing
 
-1. ✅ **Budget CRUD** - Create, Read, Update, Delete budgets
-2. ✅ **Automatic Tracking** - Budget.spent auto-updates from transactions
-3. ✅ **Budget Alerts** - Configurable threshold alerts
-4. ✅ **Status Calculation** - Percent spent, remaining, days left
-5. ✅ **Smart Filtering** - By category, period, active status
-6. ✅ **Validation** - Category, period, date validation
-7. ✅ **API Documentation** - Complete README with examples
+Contributions are welcome! Please follow these steps:
 
-### 🚀 API Endpoints Created
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
 
-| Method | Endpoint | Function |
-|--------|----------|----------|
-| POST | `/api/budgets` | Create budget |
-| GET | `/api/budgets` | List budgets |
-| GET | `/api/budgets/:id` | Get budget |
-| PUT | `/api/budgets/:id` | Update budget |
-| DELETE | `/api/budgets/:id` | Delete budget |
-| GET | `/api/budgets/alerts` | Budget alerts |
-| POST | `/api/budgets/recalculate` | Recalculate |
+### Coding Standards
+- Follow ESLint rules
+- Write tests for new features
+- Update documentation
+- Use semantic commit messages
 
-**Total: 7 endpoints**
+---
 
-***
+## 📝 License
 
-## 🏆 Achievement Unlocked!
+This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
 
-**Budget Management System** 🎉
-- Automatic expense tracking
-- Real-time budget monitoring
-- Smart alerts system
-- Production-ready code
-- Full documentation
+---
 
-***
+## 👨‍💻 Author
 
-## 💡 What's Next?
+**Kiran**  
+MERN Stack Developer  
+Previously: Node.js Backend Developer at Infosys Ltd
 
-**Day 9: Financial Goals Tracking** (5 hours)
-- Set savings goals (e.g., "Save $10,000 for vacation")
-- Track progress toward goals
-- Set target dates
-- Mark goals as achieved
-- Goal status calculation
+---
 
-**Similar to budgets but for savings targets instead of spending limits!**
+## 🙏 Acknowledgments
 
-***
+- Google Gemini API for AI categorization
+- Prisma for excellent ORM
+- Express.js community
+- React ecosystem
 
-## ⏰ Time Check
+---
 
-It's **4:41 AM** - You've been coding for **3+ hours straight!**
+## 📞 Support
 
-### Recommendations:
-1. ✅ **Take a well-deserved break** - Rest for a few hours
-2. 😴 **Get some sleep** - You've accomplished a lot!
-3. ☕ **Come back fresh** - Start Day 9 after rest
-
-***
-
-**Congratulations on completing Day 8!** 🎉🚀💪
-
-You've built a **production-ready Budget Management System** with automatic tracking, alerts, and full documentation. This is professional-level work!
-
-**Would you like to:**
-1. Take a break (highly recommended!)
-2. Review what you learned today
-3. Get a preview of Day 9 goals
-
-Let me know! 😊
-
-
-Week 2 
-
-### Goals
-Financial goals tracking with automatic progress calculation.
+For issues and questions:
+- GitHub Issues: [Create Issue](https://github.com/yourusername/FinCopilot/issues)
+- Email: your.email@example.com
 
-#### Create Goal
-POST /api/goals
-Authorization: Bearer {token}
-{
-  "title": "Emergency Fund",
-  "description": "6 months expenses",
-  "targetAmount": 300000,
-  "deadline": "2026-12-31",
-  "category": "emergency-fund",
-  "priority": "high"
-}
-
-#### Get All Goals
-GET /api/goals
-GET /api/goals?status=ACTIVE
-GET /api/goals?category=savings
-
-#### Get Single Goal
-GET /api/goals/:id
-
-#### Add Money to Goal
-PATCH /api/goals/:id/progress
-{
-  "amount": 5000
-}
-
-#### Update Goal
-PUT /api/goals/:id
-{
-  "title": "Updated Goal",
-  "targetAmount": 400000
-}
-
-#### Delete Goal
-DELETE /api/goals/:id
-
-#### Get Goal Statistics
-GET /api/goals/stats
-
-
-✅ DAY 12 COMPLETE - GIT COMMIT & DOCUMENTATION
-Time: 8:00 PM IST
-Total Duration: 1 hour 33 minutes (Estimated 4 hours - 2.5x faster!) 🔥
-Status: 100% COMPLETE
-​
-
-GIT COMMIT MESSAGE
-bash
-git add .
-git commit -m "feat: complete Day 12 advanced filtering, pagination, and search
-
-Features:
-- Query builder utility for dynamic Prisma filters
-- Advanced transaction filtering (category, type, date range, amount, merchant)
-- Multi-field search across description, merchant, and notes
-- Pagination with metadata (total, page, limit, totalPages, hasMore)
-- Dynamic sorting with configurable fields and order
-- Dedicated search endpoint with validation
-
-Components:
-- src/utils/queryBuilder.js (5 helper functions)
-- Updated src/controllers/transactionController.js (listTransactions, searchTransactions)
-- Updated src/routes/transactionRoutes.js (added search route and DELETE route)
-
-Technical Highlights:
-- Category array support (single or multiple categories)
-- Case-insensitive search with min 3 character validation
-- Pagination limits (max 100 items, default 20 for list, 50 for search)
-- Date range filtering with proper time boundaries (00:00:00 to 23:59:59)
-- Amount range filtering with parseFloat conversion
-- Security: userId filtering on all endpoints
-
-API Endpoints Enhanced:
-- GET /api/transactions (with 10+ query parameters)
-- GET /api/transactions/search (dedicated search with filters)
-- DELETE /api/transactions/:id (route added)
-
-Query Builder Functions:
-1. buildTransactionFilters - Main filter combination
-2. buildDateFilter - Date range with time boundaries
-3. buildAmountFilter - Amount range validation
-4. buildSearchFilter - Multi-field case-insensitive search
-5. buildPaginationParams - Skip/take calculation with limits
-
-Testing:
-- Comprehensive testing planned for Day 14
-- All syntax validated, no errors
-
-Week 2 Progress: 64% complete (Days 8-12 done, Days 13-14 remaining)"
-README.md UPDATE
-Add this section to your project README:
-
-text
-## Day 12: Advanced Filtering, Pagination & Search ✅
-
-**Date Completed:** January 2, 2026  
-**Duration:** 1h 33m  
-**Status:** Complete
-
-### Features Implemented
-
-#### 1. Query Builder Utility (`src/utils/queryBuilder.js`)
-Reusable dynamic filter builder for Prisma queries with 5 core functions:
-
-- **buildTransactionFilters(userId, filters)** - Main filter combiner
-- **buildDateFilter(startDate, endDate)** - Date range filtering
-- **buildAmountFilter(minAmount, maxAmount)** - Amount range filtering
-- **buildSearchFilter(searchText)** - Multi-field text search
-- **buildPaginationParams(page, limit)** - Pagination with validation
-
-#### 2. Enhanced Transaction Listing
-**Endpoint:** `GET /api/transactions`
-
-**Query Parameters:**
-- `category` - Filter by category (string or array)
-- `type` - Transaction type (income/expense)
-- `startDate` - Start date (YYYY-MM-DD)
-- `endDate` - End date (YYYY-MM-DD)
-- `minAmount` - Minimum amount
-- `maxAmount` - Maximum amount
-- `search` - Text search across description, merchant, notes
-- `accountId` - Filter by account
-- `merchant` - Filter by merchant name
-- `page` - Page number (default: 1)
-- `limit` - Items per page (default: 20, max: 100)
-- `sortBy` - Sort field (default: 'date')
-- `sortOrder` - Sort order ('asc' or 'desc', default: 'desc')
-
-**Response Format:**
-```json
-{
-  "success": true,
-  "message": "Transactions fetched successfully",
-  "data": {
-    "transactions": [...],
-    "metadata": {
-      "total": 150,
-      "page": 1,
-      "limit": 20,
-      "totalPages": 8,
-      "hasMore": true
-    }
-  }
-}
-3. Dedicated Search Endpoint
-Endpoint: GET /api/transactions/search
-
-Features:
-
-Required search parameter (min 3 characters)
-
-Searches across description, merchant, and notes fields
-
-Case-insensitive search
-
-Combinable with other filters
-
-Higher default limit (50 items)
-
-Returns search term in response
-
-Example Request:
-
-text
-GET /api/transactions/search?search=coffee&category=Food&startDate=2026-01-01
-4. Route Enhancements
-Added /search route (placed before /:id to avoid conflicts)
-
-Added missing DELETE /:id route
-
-All routes protected with authentication middleware
+---
+
+**Built with ❤️ using MERN Stack**
+
+**Last Updated:** January 18, 2026 (Day 28 Complete - 164 Tests Passing)

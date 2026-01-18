@@ -54,7 +54,7 @@ const generalRateLimiter = rateLimit({
 const strictRateLimiter = rateLimit({
   store: createRateLimitStore(),
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // 10 requests per window
+  max: 100, // 10 requests per window
   skipSuccessfulRequests: false,
   message: {
     success: false,

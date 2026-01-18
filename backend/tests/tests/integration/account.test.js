@@ -245,7 +245,8 @@ describe('Accounts API - Integration Tests', () => {
         data: {
           email: 'other@test.com',
           password: 'hashedpassword',
-          name: 'Other User'
+          firstName: 'Other',
+          lastName: 'User'
         }
       });
 

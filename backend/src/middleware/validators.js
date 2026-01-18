@@ -25,7 +25,7 @@ function handleValidationErrors(req, res, next) {
  * Auth validation rules
  */
 const authValidators = {
-  signup: [
+  signUp: [
     body('email')
       .isEmail()
       .normalizeEmail()

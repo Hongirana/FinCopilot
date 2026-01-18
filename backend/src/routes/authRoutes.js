@@ -4,8 +4,8 @@ const authController = require('../controllers/authController');
 const { authValidators, handleValidationErrors } = require('../middleware/validators');
 const { strictRateLimiter } = require('../middleware/rateLimitMiddleware');
 
-router.post('/login', strictRateLimiter, authController.login, handleValidationErrors, authValidators.login);
-router.post('/signUp', strictRateLimiter, authController.signUp, handleValidationErrors, authValidators.signup);
+router.post('/login', strictRateLimiter, authValidators.login, handleValidationErrors, authController.login);
+router.post('/signUp', strictRateLimiter, authValidators.signUp, handleValidationErrors, authController.signUp);
 
 
 /* GET /api/auth/me
@@ -13,7 +13,7 @@ router.post('/signUp', strictRateLimiter, authController.signUp, handleValidatio
 // router.get('/me', authenticateToken, authController.getCurrentUser);
 
 // /**
-//  * POST /api/auth/logout
+//  * POST /api/auth/logou
 //  */
 // router.post('/logout', authenticateToken, authController.logout);
 

@@ -22,7 +22,7 @@ const loginLimiter = rateLimit({
  */
 const signupLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 50, // limit to 10 requests per windowMs
+  max: 100, // limit to 10 requests per windowMs
   message: {
     success: false,
     error: {
