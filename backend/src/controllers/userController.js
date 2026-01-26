@@ -3,7 +3,8 @@ const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const { successResponse, errorResponse } = require('../utils/responseHelper');
 const { asyncHandler } = require('../middleware/errorHandler');
-const { NotFoundError, ValidationError, ConflictError ,AuthenticationError} = require('../utils/customErrors');
+const { NotFoundError, ValidationError, ConflictError, AuthenticationError } = require('../utils/customErrors');
+const { invalidateUserCache } = require('../services/cacheService');
 
 
 const getUsers = asyncHandler(async (req, res) => {
@@ -202,8 +203,20 @@ const updatePassword = asyncHandler(async (req, res) => {
  */
 const deleteMyAccount = asyncHandler(async (req, res) => {
   const userId = req.user.id;
-  const { password } = req.body;
+  let password;
+  const { confirmationText } = req.body;
 
+  // ✅ SAFETY: Require confirmation phrase (e.g., "DELETE MY ACCOUNT")
+  if (confirmationText !== 'DELETE ACCOUNT') {
+    throw new ValidationError('Please confirm account deletion by sending confirmationText: "DELETE ACCOUNT"');
+  }
+
+  if (!req.body || !req.body.password === undefined) {
+    throw new ValidationError('Password confirmation required to delete account');
+  }
+  else {
+    password = req.body.password;
+  }
   // Require password confirmation
   if (!password) {
     throw new ValidationError('Password confirmation required to delete account');
@@ -225,12 +238,39 @@ const deleteMyAccount = asyncHandler(async (req, res) => {
     throw new AuthenticationError('Invalid password');
   }
 
+  // Get statistics before deletion (for confirmation response)
+  const stats = await prisma.$transaction([
+    prisma.account.count({ where: { userId } }),
+    prisma.transaction.count({ where: { userId } }),
+    prisma.budget.count({ where: { userId } }),
+    prisma.goal.count({ where: { userId } })
+  ]);
+
+  const [accountCount, transactionCount, budgetCount, goalCount] = stats;
+
+  // ✅ Log deletion for audit trail
+  console.warn(`[Account Deletion] User ${userId} deleted their account`);
+  console.warn(`  - Accounts: ${accountCount}`);
+  console.warn(`  - Transactions: ${transactionCount}`);
+  console.warn(`  - Budgets: ${budgetCount}`);
+  console.warn(`  - Goals: ${goalCount}`);
+
   // Delete user (this will cascade delete related data based on your Prisma schema)
   await prisma.user.delete({
     where: { id: userId }
   });
 
-  return successResponse(res, 200, 'Account deleted successfully');
+  // Clear any remaining cache
+    await invalidateUserCache(userId);
+
+  return successResponse(res, 200, 'User Account deleted successfully', {
+    deletedStats: {
+      accounts: accountCount,
+      transactions: transactionCount,
+      budgets: budgetCount,
+      goals: goalCount
+    }
+  });
 });
 
 /**

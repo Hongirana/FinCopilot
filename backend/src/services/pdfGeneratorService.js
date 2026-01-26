@@ -37,10 +37,10 @@ const generateMonthlyReport = async (userId, month, year) => {
             }
         });
 
-        const monthName =await getMonthName(month);
+        const monthName = await getMonthName(month);
         console.log("Month Name : ", monthName);
         // Generate PDF document. 
-        const doc = new PDFDocument({ margin: 50 ,size: 'A4'});
+        const doc = new PDFDocument({ margin: 50, size: 'A4', bufferPages: true });
 
         // Add Header content to the PDF document
         doc.fontSize(24).font('Helvetica-Bold').text('Monthly Financial Report', { align: 'center' });
@@ -50,17 +50,17 @@ const generateMonthlyReport = async (userId, month, year) => {
         doc.moveDown(1);
 
         // User Info 
-        doc.fontSize(10).text(`Name: ${user.firstName}`, 50, doc.y);
+        doc.fontSize(10).font('Helvetica').text(`Name: ${user.firstName}`, 50, doc.y);
         doc.text(`Email: ${user.email}`);
         doc.moveDown(1.5);
 
         // Financial Summary Section
         addSectionHeader(doc, 'Monthly Summary');
         doc.fontSize(10);
-        doc.text(`Total Income: ₹ ${reportData.totalIncome}`);
-        doc.text(`Total Expenses: ₹ ${reportData.totalExpenses}`);
+        doc.text(`Total Income: Rs. ${reportData.totalIncome}`);
+        doc.text(`Total Expenses: Rs. ${reportData.totalExpenses}`);
         doc.fillColor(reportData.netSavings >= 0 ? '#008000' : '#FF0000');
-        doc.text(`Net Savings: ₹ ${reportData.netSavings}`);
+        doc.text(`Net Savings: Rs. ${reportData.netSavings}`);
         doc.fillColor('#000000');
         doc.text(`Savings Rate: ${reportData.savingsRate}%`);
         doc.text(`Total Transactions: ${transactionsCount}`);
@@ -72,7 +72,7 @@ const generateMonthlyReport = async (userId, month, year) => {
 
         const sortedCategories = reportData.categoryBreakdown.slice(0, 5);
         sortedCategories.forEach((cat, index) => {
-            doc.text(`${index + 1}. ${cat.category}: ₹ ${cat.amount} (${cat.percentage}%)`);
+            doc.text(`${index + 1}. ${cat.category}: Rs. ${cat.amount} (${cat.percentage}%)`);
         });
         doc.moveDown(1.5);
 
@@ -94,11 +94,11 @@ const generateMonthlyReport = async (userId, month, year) => {
                 const percentUsed = ((spent / parseFloat(budget.amount)) * 100).toFixed(1);
 
                 doc.text(`${budget.category}:`);
-                doc.text(`  Limit: ₹${budget.amount} | Spent: ₹${spent.toFixed(2)} | Remaining: ₹${remaining.toFixed(2)}`);
+                doc.text(`  Limit: Rs.${budget.amount} | Spent: Rs.${spent.toFixed(2)} | Remaining: Rs.${remaining.toFixed(2)}`);
                 doc.text(`  Usage: ${percentUsed}%`);
 
                 if (remaining < 0) {
-                    doc.fillColor('#FF0000').text(`  ⚠️ Over budget by ₹${Math.abs(remaining).toFixed(2)}`);
+                    doc.fillColor('#FF0000').text(`  ⚠️ Over budget by Rs.${Math.abs(remaining).toFixed(2)}`);
                     doc.fillColor('#000000');
                 }
                 doc.moveDown(0.5);
@@ -111,7 +111,7 @@ const generateMonthlyReport = async (userId, month, year) => {
 
 
         const avgDailySpending = (reportData.totalExpenses / daysInMonth).toFixed(2);
-        doc.fontSize(10).text(`Average Daily Spending: ₹${avgDailySpending}`);
+        doc.fontSize(10).text(`Average Daily Spending: Rs.${avgDailySpending}`);
         doc.moveDown(1.5);
 
         // Footer
@@ -148,7 +148,7 @@ const generateTransactionReport = async (transactions, dateRange) => {
             .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
         // Create PDF document
-        const doc = new PDFDocument({ margin: 50, size: 'A4' });
+        const doc = new PDFDocument({ margin: 50, size: 'A4', bufferPages: true });
 
         // Header
         doc.fontSize(20).font('Helvetica-Bold').text('Transaction Report', { align: 'center' });
@@ -163,9 +163,9 @@ const generateTransactionReport = async (transactions, dateRange) => {
 
         addSectionHeader(doc, 'Summary');
         doc.fontSize(10);
-        doc.text(`Total Income: ₹${totalIncome.toFixed(2)}`);
-        doc.text(`Total Expenses: ₹${totalExpenses.toFixed(2)}`);
-        doc.text(`Net: ₹${(totalIncome - totalExpenses).toFixed(2)}`);
+        doc.text(`Total Income: Rs.${totalIncome.toFixed(2)}`);
+        doc.text(`Total Expenses: Rs.${totalExpenses.toFixed(2)}`);
+        doc.text(`Net: Rs.${(totalIncome - totalExpenses).toFixed(2)}`);
         doc.moveDown(1.5);
 
         // Transactions Table
@@ -224,7 +224,7 @@ const generateTransactionReport = async (transactions, dateRange) => {
             } else {
                 doc.fillColor('#FF0000');
             }
-            doc.text(`₹${parseFloat(txn.amount).toFixed(2)}`, 450, currentY, { width: colWidths.amount });
+            doc.text(`Rs.${parseFloat(txn.amount).toFixed(2)}`, 450, currentY, { width: colWidths.amount });
             doc.fillColor('#000000');
 
             doc.text(txn.type, 525, currentY, { width: colWidths.type });
@@ -282,7 +282,7 @@ const generateBudgetReport = async (budgets, userId) => {
         let totalBudgeted = 0;
         let totalSpent = 0;
         let budgetsOverLimit = 0;
-
+        console.log("Budgets : ", budgets);
         budgets.forEach(budget => {
             const spent = categorySpending[budget.category] || 0;
             totalBudgeted += parseFloat(budget.amount);
@@ -293,7 +293,7 @@ const generateBudgetReport = async (budgets, userId) => {
         });
         const monthName = await getMonthName(now.getMonth() + 1)
         // Create PDF document
-        const doc = new PDFDocument({ margin: 50,size: 'A4' });
+        const doc = new PDFDocument({ margin: 50, size: 'A4', bufferPages: true });
 
         // Header
         doc.fontSize(22).font('Helvetica-Bold').text('Budget Performance Report', { align: 'center' });
@@ -310,9 +310,9 @@ const generateBudgetReport = async (budgets, userId) => {
 
         addSectionHeader(doc, 'Overall Summary');
         doc.fontSize(10);
-        doc.text(`Total Budgeted: ₹${totalBudgeted.toFixed(2)}`);
-        doc.text(`Total Spent: ₹${totalSpent.toFixed(2)}`);
-        doc.text(`Remaining: ₹${(totalBudgeted - totalSpent).toFixed(2)}`);
+        doc.text(`Total Budgeted: Rs.${totalBudgeted.toFixed(2)}`);
+        doc.text(`Total Spent: Rs.${totalSpent.toFixed(2)}`);
+        doc.text(`Remaining: Rs.${(totalBudgeted - totalSpent).toFixed(2)}`);
         doc.text(`Overall Usage: ${((totalSpent / totalBudgeted) * 100).toFixed(1)}%`);
         doc.fillColor('#FF0000');
         doc.text(`Budgets Over Limit: ${budgetsOverLimit}/${budgets.length}`);
@@ -343,9 +343,9 @@ const generateBudgetReport = async (budgets, userId) => {
             doc.moveDown(0.3);
 
             doc.fontSize(10).font('Helvetica');
-            doc.text(`Budget Limit: ₹${budget.amount}`);
-            doc.text(`Amount Spent: ₹${spent.toFixed(2)}`);
-            doc.text(`Remaining: ₹${remaining.toFixed(2)}`);
+            doc.text(`Budget Limit: Rs.${budget.amount}`);
+            doc.text(`Amount Spent: Rs.${spent.toFixed(2)}`);
+            doc.text(`Remaining: Rs.${remaining.toFixed(2)}`);
             doc.text(`Usage: ${percentUsed}%`);
 
             // Visual progress bar (text-based)
@@ -369,7 +369,7 @@ const generateBudgetReport = async (budgets, userId) => {
             // Status message
             if (isOverBudget) {
                 doc.fillColor('#FF0000');
-                doc.text(`⚠️ OVER BUDGET by ₹${Math.abs(remaining).toFixed(2)}`, { underline: true });
+                doc.text(`⚠️ OVER BUDGET by Rs.${Math.abs(remaining).toFixed(2)}`, { underline: true });
                 doc.fillColor('#000000');
             } else if (percentUsed > 80) {
                 doc.fillColor('#FFA500');
@@ -451,7 +451,7 @@ const generateCustomReport = async (userId, filters) => {
 
 
         // Create PDF document
-        const doc = new PDFDocument({ margin: 50 ,size: 'A4' });
+        const doc = new PDFDocument({ margin: 50, size: 'A4', bufferPages: true });
 
         // Header
         doc.fontSize(22).font('Helvetica-Bold').text('Custom Financial Report', { align: 'center' });
@@ -472,8 +472,8 @@ const generateCustomReport = async (userId, filters) => {
         }
         if (category) doc.text(`Category: ${category}`);
         if (type) doc.text(`Type: ${type}`);
-        if (minAmount) doc.text(`Min Amount: ₹${minAmount}`);
-        if (maxAmount) doc.text(`Max Amount: ₹${maxAmount}`);
+        if (minAmount) doc.text(`Min Amount: Rs.${minAmount}`);
+        if (maxAmount) doc.text(`Max Amount: Rs.${maxAmount}`);
         if (accountId) doc.text(`Account ID: ${accountId}`);
         doc.text(`Results Found: ${transactions.length} transactions`);
         doc.moveDown(1.5);
@@ -481,10 +481,10 @@ const generateCustomReport = async (userId, filters) => {
         // Summary Statistics
         addSectionHeader(doc, 'Summary');
         doc.fontSize(10);
-        doc.text(`Total Income: ₹${totalIncome.toFixed(2)}`);
-        doc.text(`Total Expenses: ₹${totalExpenses.toFixed(2)}`);
-        doc.text(`Net Amount: ₹${(totalIncome - totalExpenses).toFixed(2)}`);
-        doc.text(`Average Transaction: ₹${(transactions.length > 0 ? ((totalIncome + totalExpenses) / transactions.length) : 0).toFixed(2)}`);
+        doc.text(`Total Income: Rs.${totalIncome.toFixed(2)}`);
+        doc.text(`Total Expenses: Rs.${totalExpenses.toFixed(2)}`);
+        doc.text(`Net Amount: Rs.${(totalIncome - totalExpenses).toFixed(2)}`);
+        doc.text(`Average Transaction: Rs.${(transactions.length > 0 ? ((totalIncome + totalExpenses) / transactions.length) : 0).toFixed(2)}`);
         doc.moveDown(1.5);
 
         // Transactions Table (same as generateTransactionReport)
@@ -521,7 +521,7 @@ const generateCustomReport = async (userId, filters) => {
                 doc.text(txn.account?.name?.substring(0, 12) || 'N/A', 375, currentY, { width: colWidths.account });
 
                 doc.fillColor(txn.type === 'credit' ? '#008000' : '#FF0000');
-                doc.text(`₹${parseFloat(txn.amount).toFixed(2)}`, 450, currentY, { width: colWidths.amount });
+                doc.text(`Rs.${parseFloat(txn.amount).toFixed(2)}`, 450, currentY, { width: colWidths.amount });
                 doc.fillColor('#000000');
 
                 doc.text(txn.type, 525, currentY, { width: colWidths.type });
@@ -567,17 +567,65 @@ function addSectionHeader(doc, title) {
 /**
  * Add footer to PDF
  */
+// function addFooter(doc) {
+//     const pageCount = doc.bufferedPageRange().count;
+//     console.log("Page Count : ", pageCount);
+//     for (let i = 0; i < pageCount; i++) {
+//         doc.switchToPage(i);
+//         doc.fontSize(8).fillColor('#666666');
+//         doc.text(
+//             'Generated by FinCopilot - Your Personal Finance Assistant',
+//             50,
+//             750,
+//             { align: 'center' }
+//         );
+//         doc.text(`Page ${i + 1} of ${pageCount}`, 50, 760, { align: 'center' });
+//     }
+// }
+
+
 function addFooter(doc) {
-    const pageCount = doc.bufferedPageRange().count;
-    for (let i = 0; i < pageCount; i++) {
-        doc.switchToPage(i);
-        doc.fontSize(8).fillColor('#666666');
-        doc.text(
-            'Generated by FinCopilot - Your Personal Finance Assistant',
-            50,
-            750,
-            { align: 'center' }
-        );
-        doc.text(`Page ${i + 1} of ${pageCount}`, 50, 760, { align: 'center' });
+    try {
+        const range = doc.bufferedPageRange();
+        const pageCount = range.count;
+
+        console.log('Footer: Page count =', pageCount);
+
+        for (let i = 0; i < pageCount; i++) {
+            doc.switchToPage(i);
+
+            // ✅ CORRECT: Position footer at actual bottom
+            const pageHeight = doc.page.height;  // 842 for A4
+            const pageWidth = doc.page.width;    // 595 for A4
+            const bottomMargin = 50;
+            const footerY = pageHeight - bottomMargin;  // Much lower!
+
+            console.log(`Page height: ${pageHeight}, Footer Y: ${footerY}`);
+
+            // Add footer text at bottom
+            doc.fontSize(8).fillColor('#666666').font('Helvetica-Oblique');
+
+            doc.text(
+                'Generated by FinCopilot - Your Personal Finance Assistant',
+                50,
+                footerY - 30,  // ✅ Higher up from absolute bottom
+                { align: 'center', width: pageWidth - 100 }
+            );
+
+            doc.text(
+                `Page ${i + 1} of ${pageCount}`,
+                50,
+                footerY - 15,  // ✅ Just above the first line
+                { align: 'center', width: pageWidth - 100 }
+            );
+
+            doc.fillColor('#000000');
+        }
+
+        console.log('✅ Footer complete');
+
+    } catch (error) {
+        console.error('Error adding footer:', error);
     }
 }
+

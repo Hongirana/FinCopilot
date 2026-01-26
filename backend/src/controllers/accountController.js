@@ -1,7 +1,8 @@
+const prisma = require('../prismaClient');
 const accountModel = require('../models/accountModel');
 const { successResponse, errorResponse } = require('../utils/responseHelper');
 const { asyncHandler } = require('../middleware/errorHandler');
-const { NotFoundError, ValidationError,  } = require('../utils/customErrors');
+const { NotFoundError, ValidationError, BadRequestError  } = require('../utils/customErrors');
 const { invalidateUserCache } = require('../services/cacheService');
 
 
@@ -63,7 +64,7 @@ const updateAccount = asyncHandler(async (req, res, next) => {
 
     const userId = req.user.id;
     const { id } = req.params;
-    const updateData = req.body;
+    const { name , type , bankName , currency , balance} = req.body;
 
     // Verify account exists and belongs to user
     const account = await accountModel.getAccountById(id, userId);
@@ -71,6 +72,21 @@ const updateAccount = asyncHandler(async (req, res, next) => {
         throw new NotFoundError('Account not found or does not belong to you');
     }
 
+    if (name === undefined && type === undefined && bankName === undefined && currency === undefined && balance === undefined) {
+        throw new ValidationError('At least one field must be provided for update');
+    }
+
+    if (balance !== undefined) {
+        console.warn(`[Security] User ${userId} attempted to update restricted field 'balance'. Blocked.`);
+        return errorResponse(res, 403, 'Balance cannot be updated directly. Use transactions instead.');
+    }
+
+    const updateData = {
+        ...(name !== undefined && { name }),
+        ...(type !== undefined && { type }),
+        ...(bankName !== undefined && { bankName }),
+        ...(currency !== undefined && { currency })
+    };
     // Update account
     await accountModel.updateAccount(id, userId, updateData);
 
@@ -94,6 +110,15 @@ const deleteAccount = asyncHandler(async (req, res, next) => {
     if (!account) {
         throw new NotFoundError('Account not found or does not belong to you');
     }
+
+    const transactionCount = await prisma.transaction.count({
+        where: { accountId: id }
+    });
+
+    if (transactionCount > 0) {
+        throw new BadRequestError('Cannot delete account with existing transactions');
+    }
+
     // Delete account
     await accountModel.deleteAccount(id, userId);
     await invalidateUserCache(userId);

@@ -49,13 +49,20 @@ class ConflictError extends AppError {
     }
 }
 
+class BadRequestError extends AppError {
+    constructor(message, details = null) {
+        super(message, 400, 'BAD_REQUEST_ERROR', details);
+    }
+}
+
 
 module.exports = {
-  AppError,
-  ValidationError,
-  DatabaseError,
-  AuthenticationError,
-  AuthorizationError,
-  NotFoundError,
-  ConflictError
+    AppError,
+    ValidationError,
+    DatabaseError,
+    AuthenticationError,
+    AuthorizationError,
+    NotFoundError,
+    ConflictError,
+    BadRequestError
 };

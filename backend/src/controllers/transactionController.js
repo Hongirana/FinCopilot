@@ -7,7 +7,7 @@ const { asyncHandler } = require('../middleware/errorHandler');
 const { NotFoundError, ValidationError, BadRequestError } = require('../utils/customErrors');
 const { invalidateTransactionCache } = require('../services/cacheService');
 const aiService = require('../services/aiServices');
-
+const { isValidCategory , getCategoryList} = require('../constant/categories');
 const listTransactions = asyncHandler(async (req, res) => {
 
   const userId = req.user.id;
@@ -105,6 +105,11 @@ const createTransaction = asyncHandler(async (req, res) => {
     throw new NotFoundError('Account not found or does not belong to you');
   }
 
+  //Validate Category transactions
+  if (category && !isValidCategory(category)) {
+    throw new ValidationError(`Invalid category. Allowed categories are: ${getCategoryList()}`);
+  }
+
   // ✅ NEW: AI Auto-Categorization if category not provided
   if (!category) {
     console.log('[Transaction] No category provided, using AI categorization...');
@@ -119,7 +124,7 @@ const createTransaction = asyncHandler(async (req, res) => {
       category = aiResult.data.category;
       console.log(`[Transaction] AI categorized as: ${category} (confidence: ${aiResult.data.confidence})`);
     } else {
-      category = 'other';
+    category = 'other';
       console.log('[Transaction] AI categorization failed, using default: other');
     }
   }
@@ -160,7 +165,7 @@ const createTransaction = asyncHandler(async (req, res) => {
   await invalidateTransactionCache(userId);
 
   // Update budget if expense transaction
-  if (result.type === 'debit' && result.category) {
+  if (result.category) {
     try {
       await updateBudgetSpent(userId, result.category, result.date);
     } catch (budgetError) {
@@ -248,10 +253,10 @@ const updateTransaction = asyncHandler(async (req, res) => {
   await invalidateTransactionCache(userId);
 
   // Update budgets for old and new categories
-  if (transaction.type === 'debit' && transaction.category) {
+  if ( transaction.category) {
     updateBudgetSpent(userId, transaction.category, transaction.date);
   }
-  if (result.type === 'debit' && result.category) {
+  if (result.category) {
     updateBudgetSpent(userId, result.category, result.date);
   }
 
@@ -300,7 +305,7 @@ const deleteTransaction = asyncHandler(async (req, res) => {
   await invalidateTransactionCache(userId);
 
   // Update budget after deletion
-  if (transaction.type === 'debit' && transaction.category) {
+  if (transaction.category) {
     try {
       await updateBudgetSpent(userId, transaction.category, transaction.date);
     } catch (budgetError) {

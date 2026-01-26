@@ -30,18 +30,37 @@ const updateBudgetSpent = async (userId, category, transactionDate) => {
             return null;
         }
 
+        const now = new Date();
+        if (budget.endDate < now && budget.isActive) {
+            console.log(`⚠️  Budget for ${category} has expired. Auto-setting isActive = false`);
+            await prisma.budget.update({
+                where: { id: budget.id },
+                data: { isActive: false }
+            });
+        }
+
         const transactions = await prisma.transaction.findMany({
             where: {
                 userId: userId,
                 category: category.toLowerCase(),
-                type: 'debit',
                 date: { gte: budget.startDate, lte: budget.endDate }
             }
         });
 
-         const totalSpent = transactions.reduce((sum, txn) => {
-            return sum + Math.abs(Number(txn.amount));
-        }, 0);
+        const debits = transactions
+            .filter(txn => txn.type === 'debit')
+            .reduce((sum, txn) => sum + Math.abs(Number(txn.amount)), 0);
+
+        const credits = transactions
+            .filter(txn => txn.type === 'credit')
+            .reduce((sum, txn) => sum + Math.abs(Number(txn.amount)), 0);
+
+        const totalSpent = Math.max(0, debits - credits); // Don't allow negative spending
+
+        console.log(`💰 Budget calculation for ${category}:`);
+        console.log(`   Debits: ₹${debits.toFixed(2)}`);
+        console.log(`   Credits: ₹${credits.toFixed(2)}`);
+        console.log(`   Net Spent: ₹${totalSpent.toFixed(2)}`);
 
         //Update budget.spent in database
         const updatedBudget = await prisma.budget.update({
@@ -97,7 +116,7 @@ async function recalculateAllBudgets(userId) {
                 const middleDate = new Date(
                     (budget.startDate.getTime() + budget.endDate.getTime()) / 2
                 );
-                
+
                 await updateBudgetSpent(userId, budget.category, middleDate);
                 successCount++;
             } catch (error) {
@@ -106,9 +125,9 @@ async function recalculateAllBudgets(userId) {
         }
 
         console.log(`✅ Recalculated ${successCount}/${budgets.length} budgets successfully`);
-        
-        return { 
-            success: true, 
+
+        return {
+            success: true,
             total: budgets.length,
             successful: successCount,
             failed: budgets.length - successCount

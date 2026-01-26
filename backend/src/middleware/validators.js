@@ -531,11 +531,170 @@ const goalValidators = {
   ]
 };
 
+/**
+ * User Profile validation rules - NEW
+ */
+const userValidators = {
+  updateProfile: [
+    // First Name validation
+    body('firstName')
+      .optional()
+      .isString()
+      .withMessage('First name must be a string')
+      .trim()
+      .notEmpty()
+      .withMessage('First name cannot be empty')
+      .isLength({ min: 2, max: 50 })
+      .withMessage('First name must be between 2 and 50 characters')
+      .matches(/^[a-zA-Z\s'-]+$/)
+      .withMessage('First name can only contain letters, spaces, hyphens, and apostrophes'),
+
+    // Last Name validation
+    body('lastName')
+      .optional()
+      .isString()
+      .withMessage('Last name must be a string')
+      .trim()
+      .notEmpty()
+      .withMessage('Last name cannot be empty')
+      .isLength({ min: 2, max: 50 })
+      .withMessage('Last name must be between 2 and 50 characters')
+      .matches(/^[a-zA-Z\s'-]+$/)
+      .withMessage('Last name can only contain letters, spaces, hyphens, and apostrophes'),
+
+    // Email validation (optional - should be restricted for security)
+    body('email')
+      .optional()
+      .isEmail()
+      .normalizeEmail()
+      .withMessage('Invalid email format')
+      .isLength({ max: 100 })
+      .withMessage('Email too long'),
+
+    // Base Currency validation
+    body('baseCurrency')
+      .optional()
+      .isString()
+      .trim()
+      .isLength({ min: 3, max: 3 })
+      .withMessage('Currency code must be 3 characters (e.g., INR, USD)')
+      .isISO4217()
+      .withMessage('Invalid currency code (use ISO 4217 codes like INR, USD, EUR)'),
+
+    // Monthly Salary validation
+    body('monthlySalary')
+      .optional()
+      .isFloat({ min: 0, max: 99999999.99 })
+      .withMessage('Monthly salary must be a positive number (max: 99,999,999.99)')
+      .toFloat(),
+
+    // Phone Number validation
+    body('phoneNo')
+      .optional()
+      .isString()
+      .trim()
+      .matches(/^[+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}$/)
+      .withMessage('Invalid phone number format (e.g., +919876543210, 9876543210)')
+      .isLength({ min: 10, max: 15 })
+      .withMessage('Phone number must be between 10 and 15 digits'),
+
+    // Payday validation
+    body('payday')
+      .optional()
+      .isInt({ min: 1, max: 28 })
+      .withMessage('Payday must be a number between 1 and 28')
+      .toInt(),
+
+    // ✅ SECURITY: Block restricted fields
+    body('password')
+      .not().exists()
+      .withMessage('Cannot update password here. Use /api/users/me/password endpoint'),
+
+    body('role')
+      .not().exists()
+      .withMessage('Cannot update role. Contact administrator'),
+
+    body('id')
+      .not().exists()
+      .withMessage('Cannot update user ID'),
+
+    body('createdAt')
+      .not().exists()
+      .withMessage('Cannot modify creation date'),
+
+    body('updatedAt')
+      .not().exists()
+      .withMessage('Updated date is automatically managed'),
+
+    // ✅ Reject unknown fields
+    body().custom((value, { req }) => {
+      const allowedFields = [
+        'firstName', 
+        'lastName', 
+        'email', 
+        'baseCurrency', 
+        'monthlySalary', 
+        'phoneNo', 
+        'payday'
+      ];
+      
+      const receivedFields = Object.keys(req.body);
+      const invalidFields = receivedFields.filter(field => !allowedFields.includes(field));
+      
+      if (invalidFields.length > 0) {
+        throw new Error(`Invalid fields: ${invalidFields.join(', ')}. Allowed fields: ${allowedFields.join(', ')}`);
+      }
+      
+      return true;
+    })
+  ],
+
+  updatePassword: [
+    body('currentPassword')
+      .notEmpty()
+      .withMessage('Current password is required'),
+
+    body('newPassword')
+      .notEmpty()
+      .withMessage('New password is required')
+      .isLength({ min: 8 })
+      .withMessage('New password must be at least 8 characters')
+      .matches(/[A-Z]/)
+      .withMessage('New password must contain uppercase letter')
+      .matches(/[a-z]/)
+      .withMessage('New password must contain lowercase letter')
+      .matches(/[0-9]/)
+      .withMessage('New password must contain number')
+      .matches(/[!@#$%^&*]/)
+      .withMessage('New password must contain special character (!@#$%^&*)')
+      .custom((value, { req }) => {
+        if (value === req.body.currentPassword) {
+          throw new Error('New password must be different from current password');
+        }
+        return true;
+      })
+  ],
+
+  deleteAccount: [
+    body('password')
+      .notEmpty()
+      .withMessage('Password is required to delete account'),
+
+    body('confirmationText')
+      .notEmpty()
+      .withMessage('Confirmation text is required')
+      .equals('DELETE ACCOUNT')
+      .withMessage('Confirmation text must be exactly "DELETE ACCOUNT"')
+  ]
+};
+
+
 module.exports = {
   handleValidationErrors,
   authValidators,
   accountValidators,
   transactionValidators,
   budgetValidators,
-  goalValidators
+  goalValidators,
+  userValidators
 };

@@ -97,7 +97,7 @@ router.patch('/apply-category/:transactionId', authMiddleware, async (req, res) 
     // Verify transaction belongs to user
     const transaction = await prisma.transaction.findFirst({
       where: {
-        id: parseInt(transactionId),
+        id: transactionId,
         userId: userId
       }
     });
@@ -108,7 +108,7 @@ router.patch('/apply-category/:transactionId', authMiddleware, async (req, res) 
 
     // Update category
     const updated = await prisma.transaction.update({
-      where: { id: parseInt(transactionId) },
+      where: { id: transactionId },
       data: { category: category }
     });
 

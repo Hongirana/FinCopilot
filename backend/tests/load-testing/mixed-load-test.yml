@@ -1,0 +1,84 @@
+config:
+  target: "http://localhost:3000"  # ✅ CORRECTED PORT
+  phases:
+    - duration: 60
+      arrivalRate: 10
+      name: "Light load"
+    - duration: 120
+      arrivalRate: 30
+      name: "Medium load"
+    - duration: 60
+      arrivalRate: 50
+      name: "Heavy load"
+
+scenarios:
+  # 40% - Dashboard browsing
+  - name: "Dashboard Users"
+    weight: 40
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "kiran.test@fincopilot.com"
+            password: "NewTest@123456"
+          capture:
+            - json: "$.data.token"
+              as: "authToken"
+      - get:
+          url: "/api/dashboard/summary"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      - think: 5
+
+  # 30% - Transaction management
+  - name: "Transaction Users"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "kiran.test@fincopilot.com"
+            password: "NewTest@123456"
+          capture:
+            - json: "$.data.token"
+              as: "authToken"
+      - get:
+          url: "/api/transactions?page=1&limit=20"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      - think: 3
+
+  # 20% - Budget checking
+  - name: "Budget Users"
+    weight: 20
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "kiran.test@fincopilot.com"
+            password: "NewTest@123456"
+          capture:
+            - json: "$.data.token"
+              as: "authToken"
+      - get:
+          url: "/api/budgets"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      - think: 2
+
+  # 10% - Analytics
+  - name: "Analytics Users"
+    weight: 10
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "kiran.test@fincopilot.com"
+            password: "NewTest@123456"
+          capture:
+            - json: "$.data.token"
+              as: "authToken"
+      - get:
+          url: "/api/analytics/spending/monthly?month=1&year=2026"
+          headers:
+            Authorization: "Bearer {{ authToken }}"

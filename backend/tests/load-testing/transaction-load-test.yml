@@ -1,0 +1,65 @@
+config:
+  target: "http://localhost:3000"  # ✅ CORRECTED PORT
+  phases:
+    - duration: 30
+      arrivalRate: 10
+      name: "Warm-up"
+    - duration: 60
+      arrivalRate: 10
+      rampTo: 25
+      name: "Ramp-up"
+    - duration: 90
+      arrivalRate: 25
+      name: "Sustained"
+
+scenarios:
+  - name: "Transaction CRUD"
+    weight: 100
+    flow:
+      # Login
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "kiran.test@fincopilot.com"
+            password: "NewTest@123456"
+          capture:
+            - json: "$.data.token"
+              as: "authToken"
+      
+      # Get first account
+      - get:
+          url: "/api/accounts"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          capture:
+            - json: "$.data.accounts[0].id"
+              as: "accountId"
+      
+      # Create transaction
+      - post:
+          url: "/api/transactions"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            accountId: "{{ accountId }}"
+            amount: 100
+            type: "debit"
+            category: "food"
+            description: "Load test transaction"
+          capture:
+            - json: "$.data.id"
+              as: "transactionId"
+      
+      - think: 1
+      
+      # Get transaction
+      - get:
+          url: "/api/transactions/{{ transactionId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      
+      # List transactions
+      - get:
+          url: "/api/transactions?page=1&limit=10"
+          headers:
+            Authorization: "Bearer {{ authToken }}"

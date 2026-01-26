@@ -165,7 +165,7 @@ const updateGoalDetails = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const goalId = req.params.id;
     const { title, description, targetAmount, deadline, category, priority } = req.body;
-
+    
     const validatedValues = await validateValuesforUpdate(title, targetAmount, deadline, category);
     if (validatedValues.status === false && validatedValues.message) {
         throw new ValidationError(validatedValues.message);
@@ -239,13 +239,13 @@ function validateValuesforCreate(title, targetAmount, deadline, category) {
         return { status: false, message: 'Deadline is required' };
     }
 
-    const deadlineDate = new Date(deadline);
-    const today = new Date();
-    deadlineDate.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
-
-    if (deadlineDate < today) {
-        return { status: false, message: 'Deadline must be in the future' };
+    if (deadline !== undefined) {
+        console.log('Validating deadline:', deadline);
+        const deadlineValidation = validateDeadline(deadline);
+        if (deadlineValidation.status === false) {
+            return { status: false, message: deadlineValidation.message };
+        }
+        console.log('Deadline validated successfully',deadlineValidation);
     }
 
     if (!category) {
@@ -268,17 +268,15 @@ function validateValuesforUpdate(title, targetAmount, deadline, category) {
 
     // Deadline validation
     if (deadline !== undefined) {
-        if (!deadline) {
-            return { status: false, message: 'Deadline is required' };
+        if(!deadline) {
+            return { status: false, message: 'Deadline cannot be empty' };
         }
-        const deadlineDate = new Date(deadline);
-        const today = new Date();
-        deadlineDate.setHours(0, 0, 0, 0);
-        today.setHours(0, 0, 0, 0);
-
-        if (deadlineDate < today) {
-            return { status: false, message: 'Deadline cannot be in the past' };
+        console.log('Validating deadline:', deadline);
+        const deadlineValidation = validateDeadline(deadline);
+        if (deadlineValidation.status === false) {
+            return { status: false, message: deadlineValidation.message };
         }
+        console.log('Deadline validated successfully',deadlineValidation);
     }
     // Category validation
     if (category !== undefined && (!category || !category.trim())) {
@@ -287,6 +285,34 @@ function validateValuesforUpdate(title, targetAmount, deadline, category) {
 
     return { status: true, message: null };
 }
+
+const validateDeadline = (deadline) => {
+    const deadlineDate = new Date(deadline);
+    
+    // Get today at midnight UTC
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);  // ✅ Use setUTCHours (UTC safe)
+    
+    // Get tomorrow at midnight UTC (deadline must be at least tomorrow)
+    const tomorrow = new Date(today);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    
+    console.log('📅 Deadline Validation:');
+    console.log('   Deadline:', deadlineDate.toISOString());
+    console.log('   Today:', today.toISOString());
+    console.log('   Tomorrow:', tomorrow.toISOString());
+    
+    // Deadline must be strictly in future (>= tomorrow)
+    if (deadlineDate < tomorrow) {
+        return { 
+            status: false, 
+            message: 'Deadline must be at least tomorrow (in the future)' 
+        };
+    }
+    
+    return { status: true };
+};
+
 
 function addAddtionalDtls(goalsData) {
     return new Promise((resolve, reject) => {

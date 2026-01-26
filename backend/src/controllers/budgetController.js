@@ -1,7 +1,7 @@
 const prisma = require('../prismaClient');
 const { successResponse, errorResponse } = require('../utils/responseHelper.js');
 const categoryRules = require('../lib/catergoryRules.json');
-const budgetPeriod = ['daily', 'weekly', 'monthly', 'yearly'];
+const budgetPeriod = ['daily', 'weekly', 'monthly', 'yearly', 'custom'];
 
 const { asyncHandler } = require('../middleware/errorHandler');
 const { NotFoundError, ValidationError, BadRequestError, ConflictError } = require('../utils/customErrors');
@@ -63,16 +63,27 @@ const listUserBudgets = asyncHandler(async (req, res) => {
         }
     }
     if (active === 'true') {
-        filter.where.startDate = { lte: new Date() };
-        filter.where.endDate = { gte: new Date() };
+        filter.where.isActive = true;
     }
+
     const validateValues = await validateBudgetValues(category, null, period, null, null);
     if (!validateValues.status && validateValues.message) {
         throw new ValidationError(validateValues.message);
     }
 
-    const budgets = await prisma.budget.findMany(filter);
-    const budgetDatawithStatus = await getbudgetStatus(budgets);
+    let budgets = await prisma.budget.findMany(filter);
+    budgets = await syncBudgetStatuses(budgets);
+    const budgetDatawithStatus = budgets.map(budget => {
+        const statusInfo = getbudgetStatus([budget])[0];
+        const daysRemaining = Math.ceil((budget.endDate - new Date()) / (1000 * 60 * 60 * 24));
+        console.log('Status Info', statusInfo);
+        return {
+            ...statusInfo,
+            isExpired: !budget.isActive && daysRemaining < 0,  // ✅ NEW
+            daysRemaining
+        };
+    });
+    console.log('Final Budget Data with Status:', budgetDatawithStatus);
     return successResponse(res, 200, 'Budgets fetched successfully', { budgets: budgetDatawithStatus });
 })
 
@@ -81,18 +92,33 @@ const getBudgetById = asyncHandler(async (req, res) => {
     const budgetId = req.params.id;
     const userId = req.user.id;
 
-    const budgets = await prisma.budget.findFirst({
+    let budgets = await prisma.budget.findFirst({
         where: {
             id: budgetId,
             userId: userId
         }
     });
     if (!budgets) { throw new NotFoundError('Budget not found'); }
-    else {
-        const budgetDatawithStatus = await getbudgetStatus([budgets]);
-        console.log(budgetDatawithStatus);
-        return successResponse(res, 200, 'Budgets fetched successfully', { budget: budgetDatawithStatus[0] });
+    budgets = await syncBudgetStatus(budgets);
+
+    const budgetDatawithStatus = getbudgetStatus([budgets]);
+    const daysRemaining = Math.ceil((budgets.endDate - new Date()) / (1000 * 60 * 60 * 24));
+
+    // ✅ Add warnings
+    const warnings = [];
+    if (!budgets.isActive && daysRemaining < 0) {
+        warnings.push(`Budget expired ${Math.abs(daysRemaining)} days ago on ${budgets.endDate.toISOString().split('T')[0]}`);
+    } else if (daysRemaining <= 3 && daysRemaining >= 0) {
+        warnings.push(`Budget expires in ${daysRemaining} day(s)`);
     }
+
+    return successResponse(res, 200, 'Budget fetched successfully', {
+        budget: {
+            ...budgetDatawithStatus[0],
+            isExpired: !budgets.isActive && daysRemaining < 0,
+            warnings
+        }
+    });
 })
 
 
@@ -105,13 +131,24 @@ const updateBudget = asyncHandler(async (req, res) => {
     if (!category || !amount || !period || !startDate || !endDate) {
         throw new NotFoundError('Missing required fields');
     }
+
+    let budgetData = await prisma.budget.findFirst({ where: { id: budgetId, userId: userId } });
+    if (!budgetData) throw new NotFoundError('Budget not found');
+
+    budgetData = await syncBudgetStatus(budgetData);
+
+    // ✅ NEW: Block editing expired budgets
+    if (!budgetData.isActive) {
+        const daysExpired = Math.ceil((new Date() - budgetData.endDate) / (1000 * 60 * 60 * 24));
+        throw new BadRequestError(
+            `Cannot update expired budget. This budget ended ${daysExpired} day(s) ago on ${budgetData.endDate.toISOString().split('T')[0]}. Create a new budget instead.`
+        );
+    }
+
     const validateValues = await validateBudgetValues(category, amount, period, startDate, endDate);
     if (!validateValues.status && validateValues.message) {
         throw new ValidationError(validateValues.message);
     }
-
-    const budgetData = await prisma.budget.findFirst({ where: { id: budgetId, userId: userId } });
-    if (!budgetData) throw new NotFoundError('Budget not found');
 
     const updateData = {
         ...(category && { category: category.toLowerCase() }),
@@ -119,6 +156,10 @@ const updateBudget = asyncHandler(async (req, res) => {
         ...(period && { period: period.toUpperCase() }),
         ...(startDate && { startDate: new Date(startDate) }),
         ...(endDate && { endDate: new Date(endDate) }),
+    }
+    if (startDate || endDate) {
+        const tempBudget = { ...budgetData, ...updateData };
+        updateData.isActive = shouldBudgetBeActive(tempBudget);
     }
 
     const updateBudget = await prisma.budget.update({ where: { id: budgetId }, data: updateData });
@@ -145,28 +186,33 @@ const budgetAlerts = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const threshold = parseInt(req.query.threshold) || 80; // Default 80%
 
-    const budgetData = await prisma.budget.findMany({
+    let budgetData = await prisma.budget.findMany({
         where: {
             userId,
+            isActive: true,
             startDate: { lte: new Date() },
             endDate: { gte: new Date() }
         }
     });
 
+    budgetData = await syncBudgetStatuses(budgetData);
+
     const alerts = budgetData
+        .filter(budget => budget.isActive)  // Consider only active budgets
         .map(budget => {
             const percentSpent = (Number(budget.spent) / Number(budget.amount)) * 100;
-
+            const daysRemaining = Math.ceil((budget.endDate - new Date()) / (1000 * 60 * 60 * 24));
             return {
                 ...budget,
                 percentSpent: percentSpent.toFixed(2),
                 isOverBudget: percentSpent > 100,
-                isNearLimit: percentSpent >= threshold && percentSpent <= 100
+                isNearLimit: percentSpent >= threshold && percentSpent <= 100,
+                urgency: daysRemaining <= 3 ? 'HIGH' : daysRemaining <= 7 ? 'MEDIUM' : 'LOW'
             };
         })
         .filter(budget => budget.isOverBudget || budget.isNearLimit);
     console.log('Alerts:', alerts);
-    return successResponse(res, 200, 'Budgets fetched successfully', { alerts: alerts, threshold: threshold });
+    return successResponse(res, 200, 'Budgets fetched successfully', { alerts: alerts, threshold: threshold, count: alerts.length });
 })
 
 
@@ -177,6 +223,57 @@ const recalculateBudgets = asyncHandler(async (req, res) => {
     const result = await recalculateAllBudgets(userId);
     return successResponse(res, 200, 'Budgets recalculated successfully', { recalculated: result.success });
 });
+
+
+/**
+ * Check if budget should be active based on dates
+ * @param {Object} budget - Budget with startDate and endDate
+ * @returns {boolean}
+ */
+const shouldBudgetBeActive = (budget) => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);  // Start of today
+
+    const endDate = new Date(budget.endDate);
+    endDate.setHours(23, 59, 59, 999);  // End of day
+
+    // Budget is active if endDate hasn't passed yet
+    return endDate >= now;
+};
+
+/**
+ * Update budget isActive status if expired
+ * Call this when fetching/displaying budgets
+ * @param {Object} budget - Budget object
+ * @returns {Object} - Updated budget
+ */
+const syncBudgetStatus = async (budget) => {
+    const shouldBeActive = shouldBudgetBeActive(budget);
+
+    // If status mismatch, update database
+    if (budget.isActive !== shouldBeActive) {
+        console.log(`🔄 Auto-updating budget ${budget.id} isActive: ${budget.isActive} → ${shouldBeActive}`);
+
+        const updated = await prisma.budget.update({
+            where: { id: budget.id },
+            data: { isActive: shouldBeActive }
+        });
+
+        return updated;
+    }
+
+    return budget;
+};
+
+/**
+ * Sync multiple budgets
+ * @param {Array} budgets - Array of budgets
+ * @returns {Array} - Updated budgets
+ */
+const syncBudgetStatuses = async (budgets) => {
+    return Promise.all(budgets.map(budget => syncBudgetStatus(budget)));
+};
+
 
 
 module.exports = {
@@ -270,17 +367,21 @@ const validateBudgetValues = async (category, amount, period, startDate, endDate
 
 }
 
-const getbudgetStatus = async (budgetData) => {
-
-    const budgetsWithStatus = budgetData.map(budget => ({
-        ...budget,
-        percentSpent: ((budget.spent / budget.amount) * 100).toFixed(2),
-        remaining: budget.amount - budget.spent,
-        isOverBudget: budget.spent > budget.amount,
-        daysRemaining: Math.ceil(
-            (budget.endDate - new Date()) / (1000 * 60 * 60 * 24)
-        )
-    }));
-    console.log(budgetsWithStatus);
+const getbudgetStatus =  (budgetData) => {
+    console.log('Calculating budget status for:', budgetData.length, 'budgets');
+    const budgetsWithStatus = budgetData.map(budget => {
+        const spent = Number(budget.spent);
+        const amount = Number(budget.amount);
+        return {
+            ...budget,
+            percentSpent: amount > 0 ? ((spent / amount) * 100).toFixed(2) : '0.00',  // ✅ Prevent division by zero
+            remaining: amount - spent,
+            isOverBudget: spent > amount,
+            daysRemaining: Math.ceil(
+                (budget.endDate - new Date()) / (1000 * 60 * 60 * 24)
+            )
+        };
+    });
+    console.log('Budgets with status:', budgetsWithStatus);
     return budgetsWithStatus;
 }

@@ -1,0 +1,37 @@
+config:
+  target: "http://localhost:3000"  # ✅ CORRECTED PORT
+  phases:
+    # Warm-up: 5 users/second for 30 seconds
+    - duration: 30
+      arrivalRate: 5
+      name: "Warm-up phase"
+    
+    # Ramp-up: 2 → 50 users/second over 60 seconds
+    - duration: 60
+      arrivalRate: 5
+      rampTo: 20
+      name: "Ramp-up phase"
+    
+    # Sustained: 20 users/second for 120 seconds
+    - duration: 120
+      arrivalRate: 20
+      name: "Sustained load"
+    
+    # Stress: 100 users/second for 60 seconds
+    - duration: 60
+      arrivalRate: 30
+      name: "Stress test"
+
+scenarios:
+  - name: "Login Flow"
+    weight: 100
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "kiran.test@fincopilot.com"
+            password: "NewTest@123456"
+          capture:
+            - json: "$.data.token"
+              as: "authToken"
+      - think: 2

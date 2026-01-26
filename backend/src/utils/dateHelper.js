@@ -13,7 +13,7 @@ const getYearRange = (year) => {  // Remove async
     return { startDate, endDate };  // ✅ CORRECT
 };
 
-const getMonthName = async (month) => {
+const getMonthName =  (month) => {
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     return monthNames[month - 1];
 }
@@ -24,8 +24,8 @@ const getDaysInMonth = async (year, month) => {
 
 const validateDateRange = async (startDate, endDate) => {
 
-    const validStartDate = await validateDatetype(startDate);
-    const validEndDate = await validateDatetype(endDate);
+    const validStartDate =  validateDatetype(startDate);
+    const validEndDate =  validateDatetype(endDate);
     if (!validStartDate || !validEndDate) {
         return { isValid: false, message: 'Invalid Date Format' };
     }
