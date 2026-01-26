@@ -9,7 +9,7 @@ async function getHealthScore(req, res) {
   try {
     const userId = req.user.id;
 
-    console.log(`[AdvancedAnalytics] Calculating health score for user: ${userId}`);
+    
 
     // Call your utility function
     const healthScore = await advancedAnalyticsUtils.calculateBudgetHealthScore(userId);
@@ -45,7 +45,7 @@ async function getFinancialIndex(req, res) {
   try {
     const userId = req.user.id;
 
-    console.log(`[AdvancedAnalytics] Calculating financial index for user: ${userId}`);
+    
 
     // Call your utility function
     const result = await advancedAnalyticsUtils.calculateFinancialHealthIndex(userId);
@@ -76,7 +76,7 @@ async function detectAnomalies(req, res) {
     const userId = req.user.id;
     const months = parseInt(req.query.months) || 3;
 
-    console.log(`[AdvancedAnalytics] Detecting anomalies for user: ${userId}, months: ${months}`);
+    
 
     // Call your utility function
     const anomalies = await advancedAnalyticsUtils.detectAnomalies(userId, months);
@@ -109,7 +109,7 @@ async function getSpendingForecast(req, res) {
   try {
     const userId = req.user.id;
 
-    console.log(`[AdvancedAnalytics] Generating forecast for user: ${userId}`);
+   
 
     // Get last 6 months of spending data
     const sixMonthsAgo = new Date();
@@ -170,8 +170,6 @@ async function compareWithAverage(req, res) {
         message: 'Category and amount are required'
       });
     }
-
-    console.log(`[AdvancedAnalytics] Comparing ${category} spending for user: ${userId}`);
 
     // Call your utility function
     const comparison = await advancedAnalyticsUtils.compareWithAverage(

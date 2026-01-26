@@ -8,8 +8,7 @@ const { invalidateUserCache } = require('../services/cacheService');
 
 
 const getUsers = asyncHandler(async (req, res) => {
-  console.log("Fetching all users");
-  // console.log(prisma.user);
+  
   const users = await prisma.user.findMany({
     select: {
       id: true,

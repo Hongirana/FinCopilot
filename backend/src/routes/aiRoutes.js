@@ -66,8 +66,6 @@ router.post('/categorize/bulk', authMiddleware, async (req, res) => {
       });
     }
 
-    console.log(`[AI Routes] Bulk categorizing ${transactions.length} transactions`);
-
     const results = await aiService.bulkCategorize(transactions);
 
     res.json({

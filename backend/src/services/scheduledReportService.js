@@ -19,13 +19,10 @@ async function initializeScheduledReports() {
       include: { user: { select: { email: true, firstName: true } } }
     });
 
-    console.log(`[ScheduledReports] Initializing ${scheduledReports.length} scheduled reports...`);
-
     for (const report of scheduledReports) {
       await startScheduledReport(report);
     }
 
-    console.log('[ScheduledReports] All scheduled reports initialized successfully');
   } catch (error) {
     console.error('[ScheduledReports] Initialization error:', error.message);
     throw new Error('Failed to initialize scheduled reports');
@@ -47,8 +44,6 @@ async function startScheduledReport(scheduleConfig) {
 
     // Create cron job
     const job = cron.schedule(cronExpression, async () => {
-      console.log(`[ScheduledReports] Executing report ${id} for user ${userId}`);
-      
       try {
         await executeScheduledReport(scheduleConfig);
         
@@ -76,8 +71,7 @@ async function startScheduledReport(scheduleConfig) {
 
     // Store job in memory
     activeCronJobs.set(id, job);
-    
-    console.log(`[ScheduledReports] Started report ${id} with schedule: ${cronExpression}`);
+  
   } catch (error) {
     console.error('[ScheduledReports] Start error:', error.message);
     throw error;
@@ -168,8 +162,6 @@ async function executeScheduledReport(scheduleConfig) {
       reportBuffer,
       filename
     );
-
-    console.log(`[ScheduledReports] Report sent successfully to ${user.email}`);
   } catch (error) {
     console.error('[ScheduledReports] Execution error:', error.message);
     throw error;
@@ -211,8 +203,6 @@ async function createScheduledReport(scheduleData) {
 
     // Start the cron job
     await startScheduledReport(schedule);
-
-    console.log(`[ScheduledReports] Created and started report ${schedule.id}`);
     return schedule;
   } catch (error) {
     console.error('[ScheduledReports] Create error:', error.message);
@@ -286,7 +276,6 @@ async function updateScheduledReport(scheduleId, updateData) {
       await startScheduledReport(updated);
     }
 
-    console.log(`[ScheduledReports] Updated report ${scheduleId}`);
     return updated;
   } catch (error) {
     console.error('[ScheduledReports] Update error:', error.message);
@@ -307,8 +296,6 @@ async function deleteScheduledReport(scheduleId) {
     await prisma.scheduledReport.delete({
       where: { id: scheduleId }
     });
-
-    console.log(`[ScheduledReports] Deleted report ${scheduleId}`);
   } catch (error) {
     console.error('[ScheduledReports] Delete error:', error.message);
     throw new Error('Failed to delete scheduled report');
@@ -326,7 +313,6 @@ async function stopScheduledReport(scheduleId) {
     if (job) {
       job.stop();
       activeCronJobs.delete(scheduleId);
-      console.log(`[ScheduledReports] Stopped report ${scheduleId}`);
     }
   } catch (error) {
     console.error('[ScheduledReports] Stop error:', error.message);
@@ -337,15 +323,11 @@ async function stopScheduledReport(scheduleId) {
  * Stop all scheduled reports (for server shutdown)
  */
 function stopAllScheduledReports() {
-  console.log('[ScheduledReports] Stopping all scheduled reports...');
-  
   for (const [id, job] of activeCronJobs.entries()) {
     job.stop();
-    console.log(`[ScheduledReports] Stopped report ${id}`);
-  }
   
+  }
   activeCronJobs.clear();
-  console.log('[ScheduledReports] All reports stopped');
 }
 
 // ==================== HELPER FUNCTIONS ====================

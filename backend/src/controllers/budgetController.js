@@ -23,9 +23,9 @@ const createBudget = asyncHandler(async (req, res) => {
         throw new NotFoundError('Missing required fields');
     }
 
-    console.log('Request Body', req.body);
+   
     const validateValues = await validateBudgetValues(category, amount, period, startDate, endDate);
-    console.log(validateValues);
+   
     if (!validateValues.status && validateValues.message) {
         throw new ValidationError(validateValues.message);
     }
@@ -46,7 +46,7 @@ const createBudget = asyncHandler(async (req, res) => {
             userId
         }
     });
-    console.log(budget);
+   
     await invalidateBudgetCache(userId);
     return successResponse(res, 201, 'Budget created successfully', { budget });
 
@@ -76,14 +76,14 @@ const listUserBudgets = asyncHandler(async (req, res) => {
     const budgetDatawithStatus = budgets.map(budget => {
         const statusInfo = getbudgetStatus([budget])[0];
         const daysRemaining = Math.ceil((budget.endDate - new Date()) / (1000 * 60 * 60 * 24));
-        console.log('Status Info', statusInfo);
+       
         return {
             ...statusInfo,
             isExpired: !budget.isActive && daysRemaining < 0,  // ✅ NEW
             daysRemaining
         };
     });
-    console.log('Final Budget Data with Status:', budgetDatawithStatus);
+   
     return successResponse(res, 200, 'Budgets fetched successfully', { budgets: budgetDatawithStatus });
 })
 
@@ -211,7 +211,7 @@ const budgetAlerts = asyncHandler(async (req, res) => {
             };
         })
         .filter(budget => budget.isOverBudget || budget.isNearLimit);
-    console.log('Alerts:', alerts);
+  
     return successResponse(res, 200, 'Budgets fetched successfully', { alerts: alerts, threshold: threshold, count: alerts.length });
 })
 
@@ -252,7 +252,7 @@ const syncBudgetStatus = async (budget) => {
 
     // If status mismatch, update database
     if (budget.isActive !== shouldBeActive) {
-        console.log(`🔄 Auto-updating budget ${budget.id} isActive: ${budget.isActive} → ${shouldBeActive}`);
+       
 
         const updated = await prisma.budget.update({
             where: { id: budget.id },
@@ -368,7 +368,6 @@ const validateBudgetValues = async (category, amount, period, startDate, endDate
 }
 
 const getbudgetStatus =  (budgetData) => {
-    console.log('Calculating budget status for:', budgetData.length, 'budgets');
     const budgetsWithStatus = budgetData.map(budget => {
         const spent = Number(budget.spent);
         const amount = Number(budget.amount);
@@ -382,6 +381,6 @@ const getbudgetStatus =  (budgetData) => {
             )
         };
     });
-    console.log('Budgets with status:', budgetsWithStatus);
+
     return budgetsWithStatus;
 }

@@ -26,14 +26,11 @@ const categorizeTransaction = (merchant = '', description = '') => {
         // Step 3: Check if any keyword matches
         for (const keyword of keywords) {
             if (searchText.includes(keyword.toLowerCase())) {
-                console.log(`✅ Auto-categorized as "${category}" (matched keyword: "${keyword}")`);
                 return category;
             }
         }
     }
-
     // Step 4: No match found, return default
-    console.log(`⚠️  No category match found, defaulting to "other"`);
     return 'other';
 };
 

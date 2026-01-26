@@ -4,12 +4,12 @@ node_modules/
 .DS_Store
 *.log
 
+
+dist/
+build/
+coverage/
+
 /prisma/migrations
 
 /src/generated/prisma
 
-/src/generated/prisma
-
-/src/generated/prisma
-
-coverage/

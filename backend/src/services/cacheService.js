@@ -12,20 +12,20 @@ const DEFAULT_TTL = parseInt(process.env.REDIS_TTL) || 3600;
  * @returns {Promise<boolean>} Success status
  */
 async function setCache(key, value, ttl = DEFAULT_TTL) {
-    try {
-        if (!isRedisConnected()) {
-            console.warn('❌ [Redis] Redis client is not connected');
-            return false;
-        }
-        const serializedValue = JSON.stringify(value);
-        await redisClient.setEx(key, ttl, serializedValue);
-        console.log(`[Cache] SET: ${key} (TTL: ${ttl}s)`);
-        // await redisClient.set(key, JSON.stringify(value), 'EX', ttl);
-        return true;
-    } catch (error) {
-        console.error('❌ [Redis] Error setting cache:', error.message);
-        return false;
+  try {
+    if (!isRedisConnected()) {
+      console.warn('❌ [Redis] Redis client is not connected');
+      return false;
     }
+    const serializedValue = JSON.stringify(value);
+    await redisClient.setEx(key, ttl, serializedValue);
+
+    // await redisClient.set(key, JSON.stringify(value), 'EX', ttl);
+    return true;
+  } catch (error) {
+    console.error('❌ [Redis] Error setting cache:', error.message);
+    return false;
+  }
 }
 
 /**
@@ -35,21 +35,21 @@ async function setCache(key, value, ttl = DEFAULT_TTL) {
  */
 
 async function getCache(key) {
-    try {
-        if (!isRedisConnected()) {
-            console.warn('❌ [Redis] Redis client is not connected');
-            return null;
-        }
-        const cachedValue = await redisClient.get(key);
-        if (cachedValue) {
-            console.log(`[Cache] GET: ${key}`);
-            return JSON.parse(cachedValue);
-        }
-        return null;
-    } catch (error) {
-        console.error('❌ [Redis] Error getting cache:', error.message);
-        return null;
+  try {
+    if (!isRedisConnected()) {
+      console.warn('❌ [Redis] Redis client is not connected');
+      return null;
     }
+    const cachedValue = await redisClient.get(key);
+    if (cachedValue) {
+
+      return JSON.parse(cachedValue);
+    }
+    return null;
+  } catch (error) {
+    console.error('❌ [Redis] Error getting cache:', error.message);
+    return null;
+  }
 }
 
 /**
@@ -58,18 +58,18 @@ async function getCache(key) {
  * @returns {Promise<boolean>} Success status
  */
 async function deleteCache(key) {
-    try {
-        if (!isRedisConnected()) {
-            console.warn('❌ [Redis] Redis client is not connected');
-            return false;
-        }
-        await redisClient.del(key);
-        console.log(`[Cache] DELETE: ${key}`);
-        return true;
-    } catch (error) {
-        console.error('❌ [Redis] Error deleting cache:', error.message);
-        return false;
+  try {
+    if (!isRedisConnected()) {
+      console.warn('❌ [Redis] Redis client is not connected');
+      return false;
     }
+    await redisClient.del(key);
+
+    return true;
+  } catch (error) {
+    console.error('❌ [Redis] Error deleting cache:', error.message);
+    return false;
+  }
 }
 
 
@@ -79,27 +79,24 @@ async function deleteCache(key) {
  * @returns {Promise<number>} Number of keys deleted
  */
 async function deleteCachePattern(pattern) {
-    try {
-        if (!isRedisConnected()) {
-            return 0;
-        }
-
-        // Get all keys matching pattern
-        const keys = await redisClient.keys(pattern);
-
-        if (keys.length === 0) {
-            console.log(`[Cache] No keys found matching pattern: ${pattern}`);
-            return 0;
-        }
-
-        // Delete all matching keys
-        await redisClient.del(keys);
-        console.log(`[Cache] DELETED ${keys.length} keys matching: ${pattern}`);
-        return keys.length;
-    } catch (error) {
-        console.error('[Cache] Delete pattern error:', error.message);
-        return 0;
+  try {
+    if (!isRedisConnected()) {
+      return 0;
     }
+
+    // Get all keys matching pattern
+    const keys = await redisClient.keys(pattern);
+
+    if (keys.length === 0) {
+      return 0;
+    }
+    // Delete all matching keys
+    await redisClient.del(keys);
+    return keys.length;
+  } catch (error) {
+    console.error('[Cache] Delete pattern error:', error.message);
+    return 0;
+  }
 }
 
 /**
@@ -108,17 +105,17 @@ async function deleteCachePattern(pattern) {
  * @returns {Promise<boolean>} True if exists
  */
 async function cacheExists(key) {
-    try {
-        if (!isRedisConnected()) {
-            return false;
-        }
-
-        const exists = await redisClient.exists(key);
-        return exists === 1;
-    } catch (error) {
-        console.error('[Cache] Exists check error:', error.message);
-        return false;
+  try {
+    if (!isRedisConnected()) {
+      return false;
     }
+
+    const exists = await redisClient.exists(key);
+    return exists === 1;
+  } catch (error) {
+    console.error('[Cache] Exists check error:', error.message);
+    return false;
+  }
 }
 
 /**
@@ -127,16 +124,16 @@ async function cacheExists(key) {
  * @returns {Promise<number>} Remaining seconds (-1 if no TTL, -2 if not exists)
  */
 async function getCacheTTL(key) {
-    try {
-        if (!isRedisConnected()) {
-            return -2;
-        }
-
-        return await redisClient.ttl(key);
-    } catch (error) {
-        console.error('[Cache] TTL check error:', error.message);
-        return -2;
+  try {
+    if (!isRedisConnected()) {
+      return -2;
     }
+
+    return await redisClient.ttl(key);
+  } catch (error) {
+    console.error('[Cache] TTL check error:', error.message);
+    return -2;
+  }
 }
 
 /**
@@ -144,18 +141,16 @@ async function getCacheTTL(key) {
  * @returns {Promise<boolean>} Success status
  */
 async function flushCache() {
-    try {
-        if (!isRedisConnected()) {
-            return false;
-        }
-
-        await redisClient.flushDb();
-        console.log('[Cache] FLUSHED all cache');
-        return true;
-    } catch (error) {
-        console.error('[Cache] Flush error:', error.message);
-        return false;
+  try {
+    if (!isRedisConnected()) {
+      return false;
     }
+    await redisClient.flushDb();
+    return true;
+  } catch (error) {
+    console.error('[Cache] Flush error:', error.message);
+    return false;
+  }
 }
 
 /**
@@ -301,7 +296,7 @@ async function invalidateUserCache(userId) {
     }
   }
 
-  console.log(`[Cache] Invalidated ${totalDeleted} keys for user ${userId}`);
+
   return totalDeleted;
 }
 
@@ -312,7 +307,6 @@ async function invalidateUserCache(userId) {
 async function invalidateTransactionCache(userId) {
   await deleteCachePattern(`transactions:${userId}:*`);
   await deleteCache(`dashboard:${userId}`);
-  console.log(`[Cache] Invalidated transaction cache for user ${userId}`);
 }
 
 /**
@@ -322,7 +316,6 @@ async function invalidateTransactionCache(userId) {
 async function invalidateBudgetCache(userId) {
   await deleteCache(`budgets:${userId}`);
   await deleteCache(`dashboard:${userId}`);
-  console.log(`[Cache] Invalidated budget cache for user ${userId}`);
 }
 
 
@@ -336,7 +329,7 @@ module.exports = {
   getCacheTTL,
   flushCache,
   getCacheStats,
-  
+
   // Specialized cache functions
   cacheDashboard,
   getCachedDashboard,
@@ -346,7 +339,7 @@ module.exports = {
   getCachedBudgets,
   cacheAnalytics,
   getCachedAnalytics,
-  
+
   // Cache invalidation
   invalidateUserCache,
   invalidateTransactionCache,

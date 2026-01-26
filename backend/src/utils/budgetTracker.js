@@ -26,13 +26,13 @@ const updateBudgetSpent = async (userId, category, transactionDate) => {
         });
 
         if (!budget) {
-            console.log(`ℹ️  No budget found for category: ${category} on ${transactionDate}`);
+           
             return null;
         }
 
         const now = new Date();
         if (budget.endDate < now && budget.isActive) {
-            console.log(`⚠️  Budget for ${category} has expired. Auto-setting isActive = false`);
+            
             await prisma.budget.update({
                 where: { id: budget.id },
                 data: { isActive: false }
@@ -57,26 +57,21 @@ const updateBudgetSpent = async (userId, category, transactionDate) => {
 
         const totalSpent = Math.max(0, debits - credits); // Don't allow negative spending
 
-        console.log(`💰 Budget calculation for ${category}:`);
-        console.log(`   Debits: ₹${debits.toFixed(2)}`);
-        console.log(`   Credits: ₹${credits.toFixed(2)}`);
-        console.log(`   Net Spent: ₹${totalSpent.toFixed(2)}`);
-
         //Update budget.spent in database
         const updatedBudget = await prisma.budget.update({
             where: { id: budget.id },
             data: { spent: totalSpent }
         });
 
-        console.log(`✅ Budget updated: ${category} - Spent: ${totalSpent}/${budget.amount}`);
+    
 
         // Step 5: Check if over budget (log warning)
         const percentSpent = (totalSpent / Number(budget.amount)) * 100;
         if (percentSpent > 100) {
             const overAmount = totalSpent - Number(budget.amount);
-            console.log(`⚠️  ALERT: Budget exceeded for ${category}! Over by ${overAmount.toFixed(2)}`);
+            console.warn(`⚠️  ALERT: Budget exceeded for ${category}! Over by ${overAmount.toFixed(2)}`);
         } else if (percentSpent >= 80) {
-            console.log(`⚠️  WARNING: ${category} budget at ${percentSpent.toFixed(0)}%`);
+            console.warn(`⚠️  WARNING: ${category} budget at ${percentSpent.toFixed(0)}%`);
         }
 
         return updatedBudget;
@@ -104,9 +99,6 @@ async function recalculateAllBudgets(userId) {
         const budgets = await prisma.budget.findMany({
             where: { userId }
         });
-
-        console.log(`🔄 Recalculating ${budgets.length} budgets for user ${userId}...`);
-
         let successCount = 0;
 
         // Loop through each budget and recalculate
@@ -123,8 +115,6 @@ async function recalculateAllBudgets(userId) {
                 console.error(`Failed to recalculate budget ${budget.id}:`, error);
             }
         }
-
-        console.log(`✅ Recalculated ${successCount}/${budgets.length} budgets successfully`);
 
         return {
             success: true,

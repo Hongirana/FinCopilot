@@ -10,7 +10,6 @@ class AIService {
 
         this.client = new GoogleGenAI(process.env.GEMINI_API_KEY);
         this.model = 'gemini-2.5-flash';
-        console.log('[FinCopilot AIService] ✅ Initialized with model:', this.model);
     }
 
     /**
@@ -53,7 +52,7 @@ Rules:
 
             const result = this.parseAIResponse(response.text);
 
-            console.log(`[AIService] Categorized "${description}" as "${result.category}" (${result.confidence})`);
+
 
             return {
                 success: true,
@@ -106,7 +105,7 @@ Rules:
                 .trim();
 
             const parsed = JSON.parse(jsonText);
-            console.log("Parsed AI response:", parsed);
+
             return {
                 category: this.validateCategory(parsed.category),
                 confidence: this.validateConfidence(parsed.confidence)

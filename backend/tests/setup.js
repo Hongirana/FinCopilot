@@ -5,14 +5,6 @@ const { cleanDatabase, disconnectDatabase, connectDatabase, checkDatabaseConnect
 
 // Global setup - runs once before all test suites
 beforeAll(async () => {
-  console.log('\n🚀 Starting FinCopilot Test Suite');
-  console.log('=' .repeat(50));
-  console.log('📦 Jest version:', require('jest/package.json').version);
-  console.log('🧪 Supertest version:', require('supertest/package.json').version);
-  console.log('⚡ Express version:', require('express/package.json').version);
-  console.log('🗄️  Prisma version:', require('@prisma/client/package.json').version);
-  console.log('🔧 Node environment:', process.env.NODE_ENV);
-  console.log('=' .repeat(50));
   
   // Connect to database
   await connectDatabase();

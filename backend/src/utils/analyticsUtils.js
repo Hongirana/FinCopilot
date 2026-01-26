@@ -65,7 +65,6 @@ const genPrevMonthReport = async (month, year, accountId, userId, totalExpenses)
 }
 
 const getIncomeOrExpense = async (type, startDate, endDate, accountId, userId) => {
-    console.log('Inside getIncomeOrExpense');
     const totalAmount = await prisma.transaction.aggregate({
         where: {
             userId: userId,
@@ -165,7 +164,7 @@ const categoryBreakDown = async (type, startDate, endDate, accountId, userId, li
         ...(limit && { take: limit })
     });
 
-    console.log("categoryGroupedData ", categoryGroupedData);
+   
 
     return categoryGroupedData;
 }

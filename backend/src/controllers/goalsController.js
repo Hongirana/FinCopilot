@@ -9,9 +9,9 @@ const createGoals = asyncHandler(async (req, res) => {
 
     const userId = req.user.id;
     const { title, description, targetAmount, deadline, category, priority } = req.body;
-    console.log("Creating Goal");
+   
     const validatedData = await validateValuesforCreate(title, targetAmount, deadline, category);
-    console.log(validatedData);
+   
     if (validatedData.status === false && validatedData.message) {
         throw new ValidationError(validatedData.message);
     }
@@ -28,7 +28,7 @@ const createGoals = asyncHandler(async (req, res) => {
     }
 
     const goal = await prisma.goal.create({ data });
-    console.log("Goal created successfully");
+   
     await deleteCache(`goals:${userId}`);
     await deleteCache(`dashboard:${userId}`);
     return successResponse(res, 201, 'Goal Created Successfully', goal);
@@ -40,7 +40,7 @@ const getAllGoals = asyncHandler(async (req, res) => {
 
     const userId = req.user.id;
     const { status, category } = req.query;
-    console.log("Fetching all Goals");
+    
 
     const filter = {
         where: {
@@ -52,7 +52,7 @@ const getAllGoals = asyncHandler(async (req, res) => {
             { deadline: 'asc' }
 
     }
-    // console.log(prisma.user);
+    
     const userGoals = await prisma.goal.findMany(filter);
 
     const updatedGoals = await addAddtionalDtls(userGoals);
@@ -177,7 +177,7 @@ const updateGoalDetails = asyncHandler(async (req, res) => {
             userId: userId
         }
     });
-    console.log('Goal Exists', goalExists);
+    
     if (!goalExists) {
         throw new NotFoundError('Goal not found');
     }
@@ -240,12 +240,12 @@ function validateValuesforCreate(title, targetAmount, deadline, category) {
     }
 
     if (deadline !== undefined) {
-        console.log('Validating deadline:', deadline);
+        
         const deadlineValidation = validateDeadline(deadline);
         if (deadlineValidation.status === false) {
             return { status: false, message: deadlineValidation.message };
         }
-        console.log('Deadline validated successfully',deadlineValidation);
+        
     }
 
     if (!category) {
@@ -271,12 +271,12 @@ function validateValuesforUpdate(title, targetAmount, deadline, category) {
         if(!deadline) {
             return { status: false, message: 'Deadline cannot be empty' };
         }
-        console.log('Validating deadline:', deadline);
+        
         const deadlineValidation = validateDeadline(deadline);
         if (deadlineValidation.status === false) {
             return { status: false, message: deadlineValidation.message };
         }
-        console.log('Deadline validated successfully',deadlineValidation);
+        
     }
     // Category validation
     if (category !== undefined && (!category || !category.trim())) {
@@ -297,11 +297,7 @@ const validateDeadline = (deadline) => {
     const tomorrow = new Date(today);
     tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
     
-    console.log('📅 Deadline Validation:');
-    console.log('   Deadline:', deadlineDate.toISOString());
-    console.log('   Today:', today.toISOString());
-    console.log('   Tomorrow:', tomorrow.toISOString());
-    
+
     // Deadline must be strictly in future (>= tomorrow)
     if (deadlineDate < tomorrow) {
         return { 

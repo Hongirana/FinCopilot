@@ -82,7 +82,7 @@ async function sendReportEmail(emailOptions) {
     // Send email
     const info = await transporter.sendMail(mailOptions);
 
-    console.log('[EmailService] Email sent successfully:', info.messageId);
+
     return {
       success: true,
       messageId: info.messageId,
@@ -151,7 +151,7 @@ async function sendMultipleReports(emailOptions) {
     // Send email
     const info = await transporter.sendMail(mailOptions);
 
-    console.log('[EmailService] Multiple reports sent successfully:', info.messageId);
+
     return {
       success: true,
       messageId: info.messageId,
@@ -212,7 +212,6 @@ async function sendScheduledReport(to, reportName, frequency, attachment, filena
     // Send email
     const info = await transporter.sendMail(mailOptions);
 
-    console.log('[EmailService] Scheduled report sent:', info.messageId);
     return {
       success: true,
       messageId: info.messageId
@@ -232,7 +231,7 @@ async function verifyEmailConfig() {
   try {
     const transporter = createTransporter();
     await transporter.verify();
-    console.log('[EmailService] Email configuration verified successfully');
+   
     return true;
   } catch (error) {
     console.error('[EmailService] Email configuration error:', error.message);

@@ -7,21 +7,18 @@ const { NotFoundError, ValidationError, } = require('../utils/customErrors');
 
 exports.login = asyncHandler(async (req, res) => {
 
-    console.log("Inside Login Form");
     const { email, password } = req.body;
     if (!email || !password) { throw new ValidationError('Email and password are required'); }
-    console.log(email, password);
+    
     const userData = await prisma.user.findUnique({ where: { email } });
     if (!userData) {
         throw new NotFoundError('User not found');
     }
-    console.log("userData", userData);
     const comparePassword = await authUtils.verifyPassword(password, userData.password);
-    console.log("comparePassword", comparePassword);
+    
     if (!comparePassword) {
         throw new ValidationError('Invalid password');
     }
-
     const payload = {
         email: userData.email,
         id: userData.id,
@@ -63,6 +60,5 @@ exports.signUp = asyncHandler(async (req, res) => {
         // ✅ NO password field here!
     }
     });
-    console.log('newUser', newUser);
     return successResponse(res, 201, 'User created successfully', { user: newUser });
 });

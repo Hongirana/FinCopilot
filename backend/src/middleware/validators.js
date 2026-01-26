@@ -6,7 +6,7 @@ const { ValidationError } = require('../utils/customErrors');
  */
 function handleValidationErrors(req, res, next) {
   const errors = validationResult(req);
-  console.log('Validation errors from Validator:', errors.array());
+  
   if (!errors.isEmpty()) {
     const formattedErrors = errors.array().map(err => ({
       field: err.path || err.param,

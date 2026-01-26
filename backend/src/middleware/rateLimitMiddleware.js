@@ -8,7 +8,6 @@ require('dotenv').config();
  */
 function createRateLimitStore() {
   if (isRedisConnected()) {
-    console.log('[RateLimit] Using Redis store for rate limiting');
     return new RedisStore({
       client: redisClient,
       prefix: 'rate_limit:',

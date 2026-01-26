@@ -33,7 +33,7 @@ function generateToken(payload) {
 }
 
 function verifyToken(token) {
-    console.log('token', token);
+   
     return new Promise((resolve, reject) => {
         jwt.verify(token, process.env.JWT_SECRET_KEY || 'test-secret-key-fincopilot-2026' , (err, decoded) => {
             if (err) {

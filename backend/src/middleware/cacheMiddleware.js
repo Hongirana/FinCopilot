@@ -27,14 +27,9 @@ const cacheMiddleware = (ttl = 300, keyGenerator) => {
 
             // If cached response exists, return it
             if (cachedData) {
-                console.log(`[Cache Middleware] Cache HIT for key: ${cacheKey}`);
+               
                 return res.status(200).json(cachedData);
             }
-
-            // Cache miss - continue to route handler
-            console.log(`[Cache Middleware] Cache MISS for key: ${cacheKey}`);
-
-
 
             // Store original res.json function
             const originalJson = res.json.bind(res);

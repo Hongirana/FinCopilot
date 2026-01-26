@@ -28,14 +28,6 @@ class FilterService {
       // Build pagination
       const { skip, take } = buildPaginationParams(page, limit);
 
-      console.log('[FilterService] Query params:', {
-        where,
-        orderBy,
-        skip,
-        take,
-        filters: sanitized
-      });
-
       // Fetch transactions
       const [transactions, total] = await Promise.all([
         prisma.transaction.findMany({
@@ -92,7 +84,6 @@ class FilterService {
     const sanitized = validateAndSanitizeFilters(filters);
     const where = buildAdvancedWhere(userId, sanitized);
 
-    console.log('[FilterService] Stats query:', where);
 
     // Get stats using aggregate (Prisma syntax)
     const [totalCount, expenseData, incomeData, typeGroups, categoryGroups] = await Promise.all([

@@ -211,7 +211,7 @@ const exportAnalyticsToExcel = async (userId, options = {}) => {
             : (startDate && endDate)
                 ? { startDate: new Date(startDate), endDate: new Date(endDate) }
                 : await validateandGetDate(startDate, endDate);
-        console.log(dateRange);
+       
         // Fetch data
         const transactionsCount = await prisma.transaction.count({
             where: {
@@ -264,8 +264,6 @@ const exportAnalyticsToExcel = async (userId, options = {}) => {
         summarySheet.addRow(['Metric', 'Value']).font = { bold: true };
        
         const avgTransaction = (transactionsCount > 0 ? (( parseFloat(reportData.totalIncome) + parseFloat(reportData.totalExpenses)) / transactionsCount ).toFixed(2) : 0);
-        console.log('avgTransaction', avgTransaction);
-        
         
         const summaryData = [
             ['Total Income', `₹${reportData.totalIncome}`],

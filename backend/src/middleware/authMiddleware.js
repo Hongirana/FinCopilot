@@ -20,12 +20,11 @@ async function authenticateMiddleware(req, res, next) {
 
   try {
    const decoded = await authUtils.verifyToken(token);
-   console.log(decoded);
+   
       if (!decoded) {
         return errorResponse(res, 401, 'Unauthorized');
       }
       req.user = {id : decoded.id, email: decoded.email};
-      console.log('Authenticated User:', decoded);
       next();
 
   } catch (error) {

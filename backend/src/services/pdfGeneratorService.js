@@ -17,7 +17,7 @@ const generateMonthlyReport = async (userId, month, year) => {
                 id: userId
             }
         });
-        console.log("User Data : ", user);
+        
         const transactionsCount = await prisma.transaction.count({
             where: {
                 userId,
@@ -28,7 +28,6 @@ const generateMonthlyReport = async (userId, month, year) => {
             }
         })
 
-        console.log('Genrated Monthly Report : ', reportData);
         const budgets = await prisma.budget.findMany({
             where: {
                 userId,
@@ -38,7 +37,6 @@ const generateMonthlyReport = async (userId, month, year) => {
         });
 
         const monthName = await getMonthName(month);
-        console.log("Month Name : ", monthName);
         // Generate PDF document. 
         const doc = new PDFDocument({ margin: 50, size: 'A4', bufferPages: true });
 
@@ -86,9 +84,6 @@ const generateMonthlyReport = async (userId, month, year) => {
                     acc[cat.category] = parseFloat(cat.amount);
                     return acc;
                 }, {});
-                console.log("Category Lookup : ", categoryLookup);
-                console.log("Budget Category : ", budget.category);
-                console.log("Category Lookup Budget Category : ", categoryLookup[budget.category]);
                 const spent = categoryLookup[budget.category] || 0;
                 const remaining = parseFloat(budget.amount) - spent;
                 const percentUsed = ((spent / parseFloat(budget.amount)) * 100).toFixed(1);
@@ -122,7 +117,6 @@ const generateMonthlyReport = async (userId, month, year) => {
 
     }
     catch (err) {
-        console.error('[PDFGenerator] Monthly report error:', err.message);
         throw new Error('Failed to generate monthly report');
     }
 }
@@ -282,7 +276,7 @@ const generateBudgetReport = async (budgets, userId) => {
         let totalBudgeted = 0;
         let totalSpent = 0;
         let budgetsOverLimit = 0;
-        console.log("Budgets : ", budgets);
+        
         budgets.forEach(budget => {
             const spent = categorySpending[budget.category] || 0;
             totalBudgeted += parseFloat(budget.amount);
@@ -569,7 +563,7 @@ function addSectionHeader(doc, title) {
  */
 // function addFooter(doc) {
 //     const pageCount = doc.bufferedPageRange().count;
-//     console.log("Page Count : ", pageCount);
+
 //     for (let i = 0; i < pageCount; i++) {
 //         doc.switchToPage(i);
 //         doc.fontSize(8).fillColor('#666666');
@@ -589,8 +583,6 @@ function addFooter(doc) {
         const range = doc.bufferedPageRange();
         const pageCount = range.count;
 
-        console.log('Footer: Page count =', pageCount);
-
         for (let i = 0; i < pageCount; i++) {
             doc.switchToPage(i);
 
@@ -599,8 +591,6 @@ function addFooter(doc) {
             const pageWidth = doc.page.width;    // 595 for A4
             const bottomMargin = 50;
             const footerY = pageHeight - bottomMargin;  // Much lower!
-
-            console.log(`Page height: ${pageHeight}, Footer Y: ${footerY}`);
 
             // Add footer text at bottom
             doc.fontSize(8).fillColor('#666666').font('Helvetica-Oblique');
@@ -621,9 +611,6 @@ function addFooter(doc) {
 
             doc.fillColor('#000000');
         }
-
-        console.log('✅ Footer complete');
-
     } catch (error) {
         console.error('Error adding footer:', error);
     }

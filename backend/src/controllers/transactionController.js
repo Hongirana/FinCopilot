@@ -112,7 +112,7 @@ const createTransaction = asyncHandler(async (req, res) => {
 
   // ✅ NEW: AI Auto-Categorization if category not provided
   if (!category) {
-    console.log('[Transaction] No category provided, using AI categorization...');
+    
     const aiResult = await aiService.categorizeTransaction({
       description: description || '',
       amount: numericAmount,
@@ -122,10 +122,10 @@ const createTransaction = asyncHandler(async (req, res) => {
 
     if (aiResult.success) {
       category = aiResult.data.category;
-      console.log(`[Transaction] AI categorized as: ${category} (confidence: ${aiResult.data.confidence})`);
+    
     } else {
     category = 'other';
-      console.log('[Transaction] AI categorization failed, using default: other');
+    
     }
   }
 
@@ -173,7 +173,7 @@ const createTransaction = asyncHandler(async (req, res) => {
     }
   }
 
-  console.log('Transaction Created Successfully:', result);
+
   return successResponse(res, 201, 'Transaction created successfully', {
     transaction: result
   });
@@ -260,7 +260,6 @@ const updateTransaction = asyncHandler(async (req, res) => {
     updateBudgetSpent(userId, result.category, result.date);
   }
 
-  console.log('Transaction Updated Successfully:', result);
   return successResponse(res, 200, 'Transaction updated successfully', {
     transaction: result
   });

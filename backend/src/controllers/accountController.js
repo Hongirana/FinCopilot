@@ -50,7 +50,7 @@ const createAccount = asyncHandler(async (req, res, next) => {
 const getAccount = asyncHandler(async (req, res, next) => {
     const userId = req.user.id;
     const { id } = req.params;
-    console.log(userId, id);
+
     const account = await accountModel.getAccountById(id, userId);
     if (!account) {
         throw new NotFoundError('Account not found or does not belong to you');
@@ -92,7 +92,7 @@ const updateAccount = asyncHandler(async (req, res, next) => {
 
     // Fetch updated account
     const updatedAccount = await accountModel.getAccountById(id, userId);
-    console.log(updatedAccount);
+    
     await invalidateUserCache(userId);
     //sendSuccess(res, 200, 'Account updated successfully', { account: updatedAccount });
     return successResponse(res, 200, 'Account updated successfully', { account : updatedAccount });

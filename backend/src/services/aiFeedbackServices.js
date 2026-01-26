@@ -45,9 +45,6 @@ class AIFeedbackService {
           data: { category: actualCategory }
         });
       }
-
-      console.log(`[AIFeedback] Recorded: ${suggestedCategory} → ${actualCategory} (Correct: ${isCorrect})`);
-
       return feedback;
     } catch (error) {
       console.error('[AIFeedback] Error recording feedback:', error.message);
