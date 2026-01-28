@@ -15,7 +15,7 @@ import TransactionsPage from './pages/TransactionsPage';
 import BudgetsPage from './pages/BudgetsPage';
 import GoalsPage from './pages/GoalsPage';
 import ReportsPage from './pages/ReportsPage';
-import SettingsPage from './pages/SettingsPage';
+// import SettingsPage from './pages/SettingsPage';
 
 function App() {
   return (
@@ -57,12 +57,12 @@ function App() {
                 <MainLayout>
                   <Routes>
                     <Route path="/dashboard" element={<DashboardPage />} />
-                    {/* <Route path="/accounts" element={<AccountsPage />} />
+                    <Route path="/accounts" element={<AccountsPage />} />
                     <Route path="/transactions" element={<TransactionsPage />} />
                     <Route path="/budgets" element={<BudgetsPage />} />
                     <Route path="/goals" element={<GoalsPage />} />
                     <Route path="/reports" element={<ReportsPage />} />
-                    <Route path="/settings" element={<SettingsPage />} /> */}
+                    {/* <Route path="/settings" element={<SettingsPage />} /> */}
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   </Routes>
                 </MainLayout>

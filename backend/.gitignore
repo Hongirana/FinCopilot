@@ -3,7 +3,9 @@ node_modules/
 .env.local
 .DS_Store
 *.log
-
+.env.test
+.env.development
+.vscode/
 
 dist/
 build/
@@ -13,3 +15,4 @@ coverage/
 
 /src/generated/prisma
 
+.env.production

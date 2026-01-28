@@ -163,3 +163,17 @@ View full API documentation
  ------------📄 License ----------- 
  
  MIT License
+
+
+ ## 🚀 Deployment
+
+### Production
+- **Backend API:** https://fincopilot-api.onrender.com
+- **Status:** ✅ Live
+- **Deployed:** January 27, 2026
+
+### Tech Stack
+- **Hosting:** Render
+- **Database:** PostgreSQL (1GB)
+- **Cache:** Redis (25MB)
+- **Region:** Singapore (Southeast Asia)
