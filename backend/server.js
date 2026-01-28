@@ -2,7 +2,7 @@
 const express = require('express');
 const app = express();
 const port = process.env.PORT || 3000;
-
+const cors = require('cors');
 
 //Importing Routes
 const userRoutes = require('./src/routes/userRoutes');
@@ -35,6 +35,18 @@ const { initializeScheduledReports, stopAllScheduledReports } = require('./src/s
 app.use(express.json());
 app.use(requestLogger);
 console.log("FinCopilot Project Initialized Version 1.0.0");
+
+//CORS Configuration
+app.use(cors({
+  origin: [
+    'http://localhost:5173', // Frontend local development URL
+    'http://localhost:5174', // Local development URLs
+    'https://fin-copilot-fawn.vercel.app' // Production URL
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // API routes for Authentication
 app.use('/api/auth', authRoutes);
