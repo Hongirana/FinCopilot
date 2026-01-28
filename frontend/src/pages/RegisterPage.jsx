@@ -44,7 +44,8 @@ const RegisterPage = () => {
         password: formData.password,
       });
       toast.success('Registration successful! Please login.');
-      navigate('/login');
+      // navigate('/login');
+      window.location.href = '/login';
     } catch (error) {
       console.error('Registration error:', error);
       toast.error(error.response?.data?.message || 'Registration failed. Please try again.');

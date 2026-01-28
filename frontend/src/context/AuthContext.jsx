@@ -8,6 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('AuthProvider useEffect called');
     // Check if user is logged in on mount
     const currentUser = authService.getCurrentUser();
     setUser(currentUser);
@@ -15,17 +16,20 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (credentials) => {
+    console.log('AuthProvider login called with credentials:', credentials);
     const data = await authService.login(credentials);
     setUser(data.user);
     return data;
   };
 
   const register = async (userData) => {
+    console.log('AuthProvider register called with userData:', userData);
     const data = await authService.register(userData);
     return data;
   };
 
   const logout = () => {
+    console.log('AuthProvider logout called');
     authService.logout();
     setUser(null);
   };
@@ -39,9 +43,9 @@ export const AuthProvider = ({ children }) => {
     loading,
   };
 
+  console.log('AuthProvider rendering with value:', value);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-
 // Custom hook to use auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
