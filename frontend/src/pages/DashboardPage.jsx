@@ -36,15 +36,17 @@ const DashboardPage = () => {
         getAccounts(),
         getRecentTransactions(5)
       ]);
+      console.log('Fetched accounts:', accountsData);
+      console.log('Fetched transactions:', transactionsData);
 
       // Calculate statistics
       const calculatedStats = calculateDashboardStats(
-        accountsData.data || accountsData,
-        transactionsData.data || transactionsData
+        accountsData,
+        transactionsData
       );
 
       setStats(calculatedStats);
-      setRecentTransactions(transactionsData.data || transactionsData);
+      setRecentTransactions(transactionsData.transactions || []);
       setLastUpdated(new Date());
 
       // Dismiss loading and show success
@@ -56,10 +58,10 @@ const DashboardPage = () => {
 
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
-      
+
       // Set user-friendly error message
       let errorMessage = 'Failed to load dashboard data';
-      
+
       if (err.response?.status === 401) {
         errorMessage = 'Session expired. Please login again.';
         setTimeout(() => {
@@ -70,12 +72,12 @@ const DashboardPage = () => {
       } else if (!navigator.onLine) {
         errorMessage = 'No internet connection. Please check your network.';
       }
-      
+
       setError(errorMessage);
       toast.error(errorMessage, {
         duration: 5000
       });
-      
+
     } finally {
       setLoading(false);
     }
@@ -103,8 +105,8 @@ const DashboardPage = () => {
     if (date.toDateString() === yesterday.toDateString()) {
       return 'Yesterday';
     }
-    return date.toLocaleDateString('en-IN', { 
-      month: 'short', 
+    return date.toLocaleDateString('en-IN', {
+      month: 'short',
       day: 'numeric',
       year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
     });
@@ -150,9 +152,9 @@ const DashboardPage = () => {
   // Get time ago for last updated
   const getTimeAgo = (date) => {
     if (!date) return '';
-    
+
     const seconds = Math.floor((new Date() - date) / 1000);
-    
+
     if (seconds < 60) return 'Just now';
     if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`;
     if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
@@ -258,7 +260,7 @@ const DashboardPage = () => {
               </svg>
               Try Again
             </button>
-            
+
             <button
               onClick={() => window.location.href = '/accounts'}
               className="inline-flex items-center px-6 py-3 bg-white text-red-600 font-medium rounded-lg border-2 border-red-600 hover:bg-red-50 transition-colors"
@@ -311,7 +313,7 @@ const DashboardPage = () => {
                   <p className="text-xs text-gray-600 mt-1">Savings, checking, credit card, or cash</p>
                 </div>
               </div>
-              
+
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">
                   2
@@ -321,7 +323,7 @@ const DashboardPage = () => {
                   <p className="text-xs text-gray-600 mt-1">Income, expenses, or transfers</p>
                 </div>
               </div>
-              
+
               <div className="flex items-start">
                 <div className="flex-shrink-0 w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">
                   3
@@ -345,7 +347,7 @@ const DashboardPage = () => {
               </svg>
               Add Account
             </button>
-            
+
             <button
               onClick={() => window.location.href = '/transactions'}
               className="inline-flex items-center px-6 py-3 bg-white text-indigo-600 font-medium rounded-lg border-2 border-indigo-600 hover:bg-indigo-50 transition-colors"
@@ -405,7 +407,7 @@ const DashboardPage = () => {
             </p>
           )}
         </div>
-        
+
         {/* Refresh Button */}
         <button
           onClick={fetchDashboardData}
@@ -413,10 +415,10 @@ const DashboardPage = () => {
           className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           title="Refresh dashboard data"
         >
-          <svg 
+          <svg
             className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`}
-            fill="none" 
-            stroke="currentColor" 
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -449,11 +451,10 @@ const DashboardPage = () => {
               </div>
               <div className="mt-4">
                 <span
-                  className={`text-sm font-medium ${
-                    stat.changeType === 'positive'
+                  className={`text-sm font-medium ${stat.changeType === 'positive'
                       ? 'text-green-600'
                       : 'text-red-600'
-                  }`}
+                    }`}
                 >
                   {stat.change}
                 </span>
@@ -469,7 +470,7 @@ const DashboardPage = () => {
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Insights</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            
+
             {/* Transaction Count */}
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-indigo-100">
               <div className="flex items-center justify-between">
@@ -522,8 +523,8 @@ const DashboardPage = () => {
                     Savings Rate
                   </p>
                   <p className="text-2xl font-bold text-green-900 mt-1">
-                    {stats.income > 0 
-                      ? ((stats.savings / stats.income) * 100).toFixed(1) 
+                    {stats.income > 0
+                      ? ((stats.savings / stats.income) * 100).toFixed(1)
                       : '0.0'}%
                   </p>
                   <p className="text-xs text-green-600 mt-1">
@@ -569,17 +570,17 @@ const DashboardPage = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Your Accounts</h2>
-            <button 
+            <button
               onClick={() => window.location.href = '/accounts'}
               className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
             >
               Manage Accounts
             </button>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {stats.accountBreakdown.map((account) => (
-              <div 
+              <div
                 key={account.id}
                 className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:shadow-md transition-shadow"
               >
@@ -615,7 +616,7 @@ const DashboardPage = () => {
               Recent Transactions
             </h2>
             {recentTransactions.length > 0 && (
-              <button 
+              <button
                 onClick={() => window.location.href = '/transactions'}
                 className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
               >
@@ -629,10 +630,10 @@ const DashboardPage = () => {
               {recentTransactions.map((transaction) => {
                 const badge = getTransactionBadge(transaction.type);
                 const BadgeIcon = badge.icon;
-                
+
                 return (
-                  <div 
-                    key={transaction.id} 
+                  <div
+                    key={transaction.id}
                     className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0"
                   >
                     {/* Left side - Icon and Details */}
@@ -641,7 +642,7 @@ const DashboardPage = () => {
                       <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-gray-100 rounded-full text-xl">
                         {getCategoryEmoji(transaction.category)}
                       </div>
-                      
+
                       {/* Transaction Info */}
                       <div>
                         <p className="text-sm font-medium text-gray-900">
@@ -684,7 +685,7 @@ const DashboardPage = () => {
               <p className="text-sm text-gray-500 mb-4">
                 Start tracking your finances by adding your first transaction
               </p>
-              <button 
+              <button
                 onClick={() => window.location.href = '/transactions'}
                 className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
               >

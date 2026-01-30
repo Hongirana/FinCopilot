@@ -5,7 +5,7 @@ const { authValidators, handleValidationErrors } = require('../middleware/valida
 const { strictRateLimiter } = require('../middleware/rateLimitMiddleware');
 
 router.post('/login', strictRateLimiter, authValidators.login, handleValidationErrors, authController.login);
-router.post('/signUp', strictRateLimiter, authValidators.signUp, handleValidationErrors, authController.signUp);
+router.post('/register', strictRateLimiter, authValidators.signUp, handleValidationErrors, authController.signUp);
 
 
 /* GET /api/auth/me

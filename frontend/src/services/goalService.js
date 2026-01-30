@@ -13,7 +13,7 @@ export const getGoals = async (filters = {}) => {
         if (filters.category) params.append('category', filters.category);
 
         const response = await apiClient.get(`/goals?${params.toString()}`);
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error fetching goals:', error);
         throw error;
@@ -24,7 +24,7 @@ export const getGoals = async (filters = {}) => {
 export const getGoalStats = async () => {
     try {
         const response = await apiClient.get('/goals/stats');
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error fetching goal stats:', error);
         throw error;
@@ -35,7 +35,7 @@ export const getGoalStats = async () => {
 export const getGoalById = async (id) => {
     try {
         const response = await apiClient.get(`/goals/${id}`);
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error fetching goal:', error);
         throw error;
@@ -46,7 +46,7 @@ export const getGoalById = async (id) => {
 export const createGoal = async (goalData) => {
     try {
         const response = await apiClient.post('/goals', goalData);
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error creating goal:', error);
         throw error;
@@ -57,7 +57,7 @@ export const createGoal = async (goalData) => {
 export const updateGoal = async (id, goalData) => {
     try {
         const response = await apiClient.put(`/goals/${id}`, goalData);
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error updating goal:', error);
         throw error;
@@ -68,7 +68,7 @@ export const updateGoal = async (id, goalData) => {
 export const updateGoalProgress = async (id, amount) => {
     try {
         const response = await apiClient.patch(`/goals/${id}/progress`, { amount });
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error updating goal progress:', error);
         throw error;
@@ -79,7 +79,7 @@ export const updateGoalProgress = async (id, amount) => {
 export const deleteGoal = async (id) => {
     try {
         const response = await apiClient.delete(`/goals/${id}`);
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error deleting goal:', error);
         throw error;

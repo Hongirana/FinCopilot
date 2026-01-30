@@ -3,6 +3,13 @@ import authService from '../services/authService';
 
 const AuthContext = createContext(null);
 
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+  return context;
+};
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,8 +24,11 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     console.log('AuthProvider login called with credentials:', credentials);
+    console.log('Calling authService.login with credentials:', credentials);
     const data = await authService.login(credentials);
+    console.log('authService.login returned data:', data);
     setUser(data.user);
+    console.log('Setting user to:', data.user);
     return data;
   };
 
@@ -47,10 +57,4 @@ export const AuthProvider = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 // Custom hook to use auth context
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
-};
+

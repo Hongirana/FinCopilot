@@ -8,8 +8,8 @@ import apiClient from './apiClient';
 // Get dashboard summary statistics
 export const getDashboardStats = async () => {
     try {
-        const response = await apiClient.get('/api/dashboard/stats');
-        return response.data;
+        const response = await apiClient.get('/dashboard/stats');
+        return response.data.data;
     } catch (error) {
         console.error('Error fetching dashboard stats:', error);
         throw error;
@@ -19,8 +19,9 @@ export const getDashboardStats = async () => {
 // Get all accounts with balances
 export const getAccounts = async () => {
     try {
-        const response = await apiClient.get('/api/accounts');
-        return response.data;
+        const response = await apiClient.get('/accounts');
+        console.log('Fetched accounts:', response.data);
+        return response.data.data;
     } catch (error) {
         console.error('Error fetching accounts:', error);
         throw error;
@@ -30,14 +31,15 @@ export const getAccounts = async () => {
 // Get recent transactions (limit 5-10)
 export const getRecentTransactions = async (limit = 5) => {
     try {
-        const response = await apiClient.get('/api/transactions', {
+        const response = await apiClient.get('/transactions', {
             params: {
                 limit,
                 sortBy: 'date',
                 sortOrder: 'desc'
             }
         });
-        return response.data;
+        console.log('Fetched recent transactions:', response);
+        return response.data.data;
     } catch (error) {
         console.error('Error fetching recent transactions:', error);
         throw error;
@@ -47,10 +49,10 @@ export const getRecentTransactions = async (limit = 5) => {
 // Get transaction summary (income/expense totals for current month)
 export const getTransactionSummary = async (startDate, endDate) => {
     try {
-        const response = await apiClient.get('/api/transactions/summary', {
+        const response = await apiClient.get('/transactions/summary', {
             params: { startDate, endDate }
         });
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error fetching transaction summary:', error);
         throw error;
@@ -60,10 +62,13 @@ export const getTransactionSummary = async (startDate, endDate) => {
 // Calculate dashboard statistics from accounts and transactions
 export const calculateDashboardStats = (accounts, transactions) => {
     // 1. Calculate total balance across all accounts
-    const totalBalance = accounts.reduce((sum, account) => {
+    const transactionsList = transactions.transactions || [];
+    const accountsList = accounts.accounts || [];
+    console.log('Calculating dashboard stats with accounts:', accountsList);
+    const totalBalance = accountsList.length > 0 ? accountsList.reduce((sum, account) => {
         return sum + parseFloat(account.balance || 0);
-    }, 0);
-
+    }, 0) : 0;
+    
     // 2. Get current month and previous month date ranges
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -76,12 +81,12 @@ export const calculateDashboardStats = (accounts, transactions) => {
     const previousMonthEnd = new Date(currentYear, currentMonth, 0);
 
     // 3. Filter transactions by month
-    const currentMonthTransactions = transactions.filter(txn => {
+    const currentMonthTransactions = transactionsList.filter(txn => {
         const txnDate = new Date(txn.date);
         return txnDate >= currentMonthStart && txnDate <= currentMonthEnd;
     });
 
-    const previousMonthTransactions = transactions.filter(txn => {
+    const previousMonthTransactions = transactionsList.filter(txn => {
         const txnDate = new Date(txn.date);
         return txnDate >= previousMonthStart && txnDate <= previousMonthEnd;
     });
@@ -124,7 +129,7 @@ export const calculateDashboardStats = (accounts, transactions) => {
     const savingsChange = calculatePercentageChange(currentSavings, previousSavings);
 
     // 8. Get account breakdown
-    const accountBreakdown = accounts.map(account => ({
+    const accountBreakdown = accountsList.map(account => ({
         id: account.id,
         name: account.accountName,
         type: account.accountType,

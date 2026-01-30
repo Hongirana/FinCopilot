@@ -13,7 +13,7 @@ export const getTransactions = async (filters = {}) => {
         if (filters.search) params.append('search', filters.search);
 
         const response = await apiClient.get(`/transactions?${params.toString()}`);
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error fetching transactions:', error);
         throw error;
@@ -24,7 +24,7 @@ export const getTransactions = async (filters = {}) => {
 export const getTransactionById = async (id) => {
     try {
         const response = await apiClient.get(`/transactions/${id}`);
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error fetching transaction:', error);
         throw error;
@@ -35,7 +35,7 @@ export const getTransactionById = async (id) => {
 export const createTransaction = async (transactionData) => {
     try {
         const response = await apiClient.post('/transactions', transactionData);
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error creating transaction:', error);
         throw error;
@@ -46,7 +46,7 @@ export const createTransaction = async (transactionData) => {
 export const updateTransaction = async (id, transactionData) => {
     try {
         const response = await apiClient.put(`/transactions/${id}`, transactionData);
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error updating transaction:', error);
         throw error;
@@ -57,7 +57,7 @@ export const updateTransaction = async (id, transactionData) => {
 export const deleteTransaction = async (id) => {
     try {
         const response = await apiClient.delete(`/transactions/${id}`);
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error deleting transaction:', error);
         throw error;

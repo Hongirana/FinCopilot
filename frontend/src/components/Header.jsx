@@ -37,7 +37,7 @@ const Header = () => {
         {/* Left side - Page title or breadcrumb (can be dynamic later) */}
         <div>
           <h2 className="text-lg font-semibold text-gray-800">
-            Welcome back, {user?.username}!
+            Welcome back, {user?.firstName || user?.lastName}!
           </h2>
         </div>
 

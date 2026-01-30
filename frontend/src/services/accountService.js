@@ -9,8 +9,9 @@ import apiClient from './apiClient';
 // Get all accounts for current user
 export const getAccounts = async () => {
   try {
-    const response = await apiClient.get('/api/accounts');
-    return response.data;
+    const response = await apiClient.get('/accounts');
+    console.log('Fetched accounts:', response.data);
+    return response.data.data;
   } catch (error) {
     console.error('Error fetching accounts:', error);
     throw error;
@@ -20,8 +21,8 @@ export const getAccounts = async () => {
 // Get single account by ID
 export const getAccountById = async (accountId) => {
   try {
-    const response = await apiClient.get(`/api/accounts/${accountId}`);
-    return response.data;
+    const response = await apiClient.get(`/accounts/${accountId}`);
+    return response.data.data;
   } catch (error) {
     console.error('Error fetching account:', error);
     throw error;
@@ -31,8 +32,8 @@ export const getAccountById = async (accountId) => {
 // Create new account
 export const createAccount = async (accountData) => {
   try {
-    const response = await apiClient.post('/api/accounts', accountData);
-    return response.data;
+    const response = await apiClient.post('/accounts', accountData);
+    return response.data.data;
   } catch (error) {
     console.error('Error creating account:', error);
     throw error;
@@ -42,8 +43,8 @@ export const createAccount = async (accountData) => {
 // Update existing account
 export const updateAccount = async (accountId, accountData) => {
   try {
-    const response = await apiClient.put(`/api/accounts/${accountId}`, accountData);
-    return response.data;
+    const response = await apiClient.put(`/accounts/${accountId}`, accountData);
+    return response.data.data;
   } catch (error) {
     console.error('Error updating account:', error);
     throw error;
@@ -53,8 +54,8 @@ export const updateAccount = async (accountId, accountData) => {
 // Delete account
 export const deleteAccount = async (accountId) => {
   try {
-    const response = await apiClient.delete(`/api/accounts/${accountId}`);
-    return response.data;
+    const response = await apiClient.delete(`/accounts/${accountId}`);
+    return response.data.data;
   } catch (error) {
     console.error('Error deleting account:', error);
     throw error;

@@ -1,10 +1,11 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import MainLayout from './components/MainLayout';
 
-// Auth Pages
+// Public Pages
+import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 
@@ -19,8 +20,9 @@ import ReportsPage from './pages/ReportsPage';
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <Router>
+      <AuthProvider>
+        {/* Toast Notifications with Custom Styling */}
         <Toaster 
           position="top-right"
           toastOptions={{
@@ -28,6 +30,8 @@ function App() {
             style: {
               background: '#363636',
               color: '#fff',
+              borderRadius: '8px',
+              fontSize: '14px',
             },
             success: {
               iconTheme: {
@@ -43,35 +47,79 @@ function App() {
             },
           }}
         />
-        
+
         <Routes>
-          {/* Public Routes */}
+          {/* Public Routes - No Layout */}
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {/* Protected Routes with Layout */}
+          {/* Protected Routes - With MainLayout */}
           <Route
-            path="/*"
+            path="/dashboard"
             element={
               <PrivateRoute>
                 <MainLayout>
-                  <Routes>
-                    <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/accounts" element={<AccountsPage />} />
-                    <Route path="/transactions" element={<TransactionsPage />} />
-                    <Route path="/budgets" element={<BudgetsPage />} />
-                    <Route path="/goals" element={<GoalsPage />} />
-                    <Route path="/reports" element={<ReportsPage />} />
-                    {/* <Route path="/settings" element={<SettingsPage />} /> */}
-                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                  </Routes>
+                  <DashboardPage />
                 </MainLayout>
               </PrivateRoute>
             }
           />
+          <Route
+            path="/accounts"
+            element={
+              <PrivateRoute>
+                <MainLayout>
+                  <AccountsPage />
+                </MainLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/transactions"
+            element={
+              <PrivateRoute>
+                <MainLayout>
+                  <TransactionsPage />
+                </MainLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/budgets"
+            element={
+              <PrivateRoute>
+                <MainLayout>
+                  <BudgetsPage />
+                </MainLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/goals"
+            element={
+              <PrivateRoute>
+                <MainLayout>
+                  <GoalsPage />
+                </MainLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <PrivateRoute>
+                <MainLayout>
+                  <ReportsPage />
+                </MainLayout>
+              </PrivateRoute>
+            }
+          />
+          {/* Catch all - redirect to landing page */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 

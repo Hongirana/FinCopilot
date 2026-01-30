@@ -45,7 +45,8 @@ const AccountsPage = () => {
         try {
             setLoading(true);
             const response = await getAccounts();
-            setAccounts(response.data || response);
+            console.log('Fetched accounts in accountsPage:', response);
+            setAccounts(response.accounts || []);
         } catch (error) {
             console.error('Error fetching accounts:', error);
             toast.error('Failed to load accounts');
@@ -55,7 +56,7 @@ const AccountsPage = () => {
     };
 
     const filterAccounts = () => {
-        let filtered = [...accounts];
+        let filtered = accounts && accounts.length > 0 ? [...accounts] : [];
 
         // Filter by type
         if (filterType !== 'ALL') {
@@ -122,21 +123,26 @@ const AccountsPage = () => {
             avgBalance: 0,
             zeroBalance: 0
         };
+        if (accounts.length > 0) {
+            accounts.forEach(account => {
+                const type = account.type || account.accountType || 'unknown';
+                const balance = parseFloat(account.balance || 0);
 
-        accounts.forEach(account => {
-            const type = account.type || account.accountType || 'unknown';
-            const balance = parseFloat(account.balance || 0);
+                // Count by type
+                stats.byType[type] = (stats.byType[type] || 0) + 1;
 
-            // Count by type
-            stats.byType[type] = (stats.byType[type] || 0) + 1;
+                // Track balances
+                if (balance > stats.highestBalance) stats.highestBalance = balance;
+                if (balance < stats.lowestBalance) stats.lowestBalance = balance;
+                if (balance === 0) stats.zeroBalance++;
+            });
+        }
 
-            // Track balances
-            if (balance > stats.highestBalance) stats.highestBalance = balance;
-            if (balance < stats.lowestBalance) stats.lowestBalance = balance;
-            if (balance === 0) stats.zeroBalance++;
-        });
+        const totalBalance = accounts.length > 0 ? accounts.reduce((sum, account) =>
+            sum + parseFloat(account.balance || 0), 0
+        ) : 0;
 
-        // Calculate average
+        // Calculate averagec
         stats.avgBalance = accounts.length > 0 ? totalBalance / accounts.length : 0;
 
         if (stats.lowestBalance === Infinity) stats.lowestBalance = 0;
@@ -235,9 +241,9 @@ const AccountsPage = () => {
     };
 
     // Calculate total balance
-    const totalBalance = accounts.reduce((sum, account) =>
+    const totalBalance = accounts.length > 0 ? accounts.reduce((sum, account) =>
         sum + parseFloat(account.balance || 0), 0
-    );
+    ) : 0;
 
     // Get account name (handles both backend field names)
     const getAccountName = (account) => {
@@ -452,7 +458,7 @@ const AccountsPage = () => {
                         <div
                             key={account.id}
                             className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200 hover:-translate-y-1 animate-fade-in"
-                            style={{ animationDelay: `${index * 50}ms` }}
+                            style={{ animationDelay: `${filteredAccounts.indexOf(account) * 50}ms` }}
                         >
                             {/* Account Header */}
                             <div className="flex items-start justify-between mb-4">

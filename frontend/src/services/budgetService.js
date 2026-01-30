@@ -14,7 +14,7 @@ export const getBudgets = async (filters = {}) => {
         if (filters.active !== undefined) params.append('active', filters.active);
 
         const response = await apiClient.get(`/budgets?${params.toString()}`);
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error fetching budgets:', error);
         throw error;
@@ -25,7 +25,7 @@ export const getBudgets = async (filters = {}) => {
 export const getBudgetById = async (id) => {
     try {
         const response = await apiClient.get(`/budgets/${id}`);
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error fetching budget:', error);
         throw error;
@@ -36,7 +36,7 @@ export const getBudgetById = async (id) => {
 export const createBudget = async (budgetData) => {
     try {
         const response = await apiClient.post('/budgets', budgetData);
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error creating budget:', error);
         throw error;
@@ -47,7 +47,7 @@ export const createBudget = async (budgetData) => {
 export const updateBudget = async (id, budgetData) => {
     try {
         const response = await apiClient.put(`/budgets/${id}`, budgetData);
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error updating budget:', error);
         throw error;
@@ -58,7 +58,7 @@ export const updateBudget = async (id, budgetData) => {
 export const deleteBudget = async (id) => {
     try {
         const response = await apiClient.delete(`/budgets/${id}`);
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error deleting budget:', error);
         throw error;
@@ -69,7 +69,7 @@ export const deleteBudget = async (id) => {
 export const getBudgetAlerts = async (threshold = 80) => {
     try {
         const response = await apiClient.get(`/budgets/alerts?threshold=${threshold}`);
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error fetching budget alerts:', error);
         throw error;
@@ -80,7 +80,7 @@ export const getBudgetAlerts = async (threshold = 80) => {
 export const recalculateBudgets = async () => {
     try {
         const response = await apiClient.post('/budgets/recalculate');
-        return response.data;
+        return response.data.data;
     } catch (error) {
         console.error('Error recalculating budgets:', error);
         throw error;

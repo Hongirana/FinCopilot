@@ -189,7 +189,7 @@ export const downloadAnalyticsExcel = async (params) => {
 export const sendReportEmail = async (emailData) => {
   try {
     const response = await apiClient.post('/reports/email/send', emailData);
-    return response.data;
+    return response.data.data;
   } catch (error) {
     console.error('Error sending report email:', error);
     throw error;
@@ -204,7 +204,7 @@ export const sendReportEmail = async (emailData) => {
 export const createScheduledReport = async (scheduleData) => {
   try {
     const response = await apiClient.post('/reports/schedule', scheduleData);
-    return response.data;
+    return response.data.data;
   } catch (error) {
     console.error('Error creating schedule:', error);
     throw error;
@@ -215,7 +215,7 @@ export const createScheduledReport = async (scheduleData) => {
 export const getScheduledReports = async () => {
   try {
     const response = await apiClient.get('/reports/schedule');
-    return response.data;
+    return response.data.data;
   } catch (error) {
     console.error('Error fetching schedules:', error);
     throw error;
@@ -226,7 +226,7 @@ export const getScheduledReports = async () => {
 export const updateScheduledReport = async (id, updateData) => {
   try {
     const response = await apiClient.put(`/reports/schedule/${id}`, updateData);
-    return response.data;
+    return response.data.data;
   } catch (error) {
     console.error('Error updating schedule:', error);
     throw error;
@@ -237,7 +237,7 @@ export const updateScheduledReport = async (id, updateData) => {
 export const deleteScheduledReport = async (id) => {
   try {
     const response = await apiClient.delete(`/reports/schedule/${id}`);
-    return response.data;
+    return response.data.data;
   } catch (error) {
     console.error('Error deleting schedule:', error);
     throw error;

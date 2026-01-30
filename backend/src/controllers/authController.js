@@ -4,18 +4,19 @@ const authUtils = require('../utils/authUtils');
 const { successResponse, errorResponse } = require('../utils/responseHelper');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { NotFoundError, ValidationError, } = require('../utils/customErrors');
+const { user } = require('../middleware/userMiddleware');
 
 exports.login = asyncHandler(async (req, res) => {
 
     const { email, password } = req.body;
     if (!email || !password) { throw new ValidationError('Email and password are required'); }
-    
+
     const userData = await prisma.user.findUnique({ where: { email } });
     if (!userData) {
         throw new NotFoundError('User not found');
     }
     const comparePassword = await authUtils.verifyPassword(password, userData.password);
-    
+
     if (!comparePassword) {
         throw new ValidationError('Invalid password');
     }
@@ -24,8 +25,18 @@ exports.login = asyncHandler(async (req, res) => {
         id: userData.id,
         name: userData.firstName
     }
+
+    const returningUserData = {
+        id: userData.id,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        baseCurrency: userData.baseCurrency,
+        role: userData.role,
+        createdAt: userData.createdAt
+    }
     const jwtToken = await authUtils.generateToken(payload);
-    return successResponse(res, 200, 'Login successful', { token: jwtToken });
+    return successResponse(res, 200, 'Login successful', { token: jwtToken, user: returningUserData });
 })
 
 exports.signUp = asyncHandler(async (req, res) => {
@@ -49,16 +60,16 @@ exports.signUp = asyncHandler(async (req, res) => {
     const newUser = await prisma.user.create({
         data: userData,
         select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        baseCurrency: true,
-        role: true,
-        createdAt: true,
-        updatedAt: true
-        // ✅ NO password field here!
-    }
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            baseCurrency: true,
+            role: true,
+            createdAt: true,
+            updatedAt: true
+            // ✅ NO password field here!
+        }
     });
     return successResponse(res, 201, 'User created successfully', { user: newUser });
 });
