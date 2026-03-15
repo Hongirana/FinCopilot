@@ -23,7 +23,6 @@ const AccountModal = ({ isOpen, onClose, onSubmit, account, loading }) => {
         bankName: account.bankName || account.description || ''
       });
     } else {
-      // Reset form for new account
       setFormData({
         name: '',
         type: 'savings',

@@ -1,4 +1,4 @@
-import { createContext, useState, useContext, useEffect } from 'react';
+import { createContext, useState, useContext, useEffect , useCallback } from 'react';
 import authService from '../services/authService';
 
 const AuthContext = createContext(null);
@@ -13,6 +13,12 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const logout = useCallback(() => {
+    console.log('AuthProvider logout called');
+    authService.logout();
+    setUser(null);
+  }, []);
 
   useEffect(() => {
     console.log('AuthProvider useEffect called');
@@ -38,11 +44,7 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  const logout = () => {
-    console.log('AuthProvider logout called');
-    authService.logout();
-    setUser(null);
-  };
+  
 
   const value = {
     user,

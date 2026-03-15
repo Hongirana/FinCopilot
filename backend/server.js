@@ -77,11 +77,8 @@ app.post('/update', (req, res) => {
   res.send('Financial data analysis in progress...');
 });
 
-// app.use(errorHandlerMiddleware);
-app.use(notFoundHandler);
 
-// Global Error Handler (must be LAST middleware)
-app.use(errorHandler);
+
 
 
 app.listen(port, async () => {
@@ -115,13 +112,17 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-// Error handling
-app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || 'Internal server error'
-  });
-});
+//General Error handling 
+// app.use((err, req, res, next) => {
+//   console.error('Error:', err);
+//   res.status(err.status || 500).json({
+//     success: false,
+//     message: err.message || 'Internal server error'
+//   });
+// });
+
+app.use(notFoundHandler);
+// Global Error Handler (must be LAST middleware)
+app.use(errorHandler);
 
 module.exports = app;

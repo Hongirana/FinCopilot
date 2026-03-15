@@ -7,7 +7,8 @@ const { asyncHandler } = require('../middleware/errorHandler');
 const { NotFoundError, ValidationError, BadRequestError } = require('../utils/customErrors');
 const { invalidateTransactionCache } = require('../services/cacheService');
 const aiService = require('../services/aiServices');
-const { isValidCategory , getCategoryList} = require('../constant/categories');
+const { isValidCategory, getCategoryList } = require('../constant/categories');
+
 const listTransactions = asyncHandler(async (req, res) => {
 
   const userId = req.user.id;
@@ -112,7 +113,7 @@ const createTransaction = asyncHandler(async (req, res) => {
 
   // ✅ NEW: AI Auto-Categorization if category not provided
   if (!category) {
-    
+
     const aiResult = await aiService.categorizeTransaction({
       description: description || '',
       amount: numericAmount,
@@ -122,10 +123,10 @@ const createTransaction = asyncHandler(async (req, res) => {
 
     if (aiResult.success) {
       category = aiResult.data.category;
-    
+
     } else {
-    category = 'other';
-    
+      category = 'other';
+
     }
   }
 
@@ -253,7 +254,7 @@ const updateTransaction = asyncHandler(async (req, res) => {
   await invalidateTransactionCache(userId);
 
   // Update budgets for old and new categories
-  if ( transaction.category) {
+  if (transaction.category) {
     updateBudgetSpent(userId, transaction.category, transaction.date);
   }
   if (result.category) {
